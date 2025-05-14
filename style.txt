@@ -1,0 +1,579 @@
+/* style.css */
+/* Philadelphia Eagles Colour Palette:
+   Midnight Green: #004C54
+   Silver: #A5ACAF (Primary Accent)
+   Black: #000000 (Text, accents)
+   White: #FFFFFF (Backgrounds, text)
+   Kelly Green (Classic accent, optional): #007A53
+*/
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f0f0; /* Light grey background for the page */
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top to see header first */
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 1000px;
+    background-color: #FFFFFF; /* White background for the game area */
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 40px); /* Ensure footer is at bottom */
+}
+
+#game-header {
+    background-color: #004C54; /* Midnight Green */
+    color: #FFFFFF;
+    padding: 15px 25px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#game-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+#header-left {
+    display: flex;
+    align-items: center;
+}
+
+#eagles-logo-header {
+    width: 40px; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    margin-right: 15px;
+    border-radius: 4px; /* Optional: if logo is square */
+}
+
+
+#gm-info {
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+#jake-headshot {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #A5ACAF; /* Silver border */
+    margin-right: 10px;
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+}
+
+#gm-stats span {
+    margin-left: 15px;
+}
+
+#info-week, #info-intel, #info-green {
+    font-weight: bold;
+}
+
+#screen-area {
+    padding: 25px;
+    flex-grow: 1; /* Allows this area to take up available space */
+    overflow-y: auto; /* Scroll if content overflows */
+}
+
+#screen-area h2 {
+    color: #004C54; /* Midnight Green */
+    margin-top: 0;
+    border-bottom: 2px solid #A5ACAF; /* Silver underline */
+    padding-bottom: 10px;
+}
+
+#screen-area p {
+    margin-bottom: 15px;
+}
+
+/* Buttons */
+button, .button-style {
+    background-color: #004C54; /* Midnight Green */
+    color: #FFFFFF;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    margin: 5px;
+    text-decoration: none; /* For .button-style if used on <a> tags */
+    display: inline-block; /* For .button-style if used on <a> tags */
+    text-align: center;
+}
+
+button:hover, .button-style:hover {
+    background-color: #006a75; /* Darker shade of Midnight Green */
+}
+
+button:active, .button-style:active {
+    transform: translateY(1px);
+}
+
+button.secondary {
+    background-color: #A5ACAF; /* Silver */
+    color: #000000;
+}
+
+button.secondary:hover {
+    background-color: #8e9597; /* Darker Silver */
+}
+
+button.disabled, button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+/* Specific Screen Styles */
+
+/* Main Menu */
+.main-menu-container {
+    text-align: center;
+    padding-top: 50px;
+}
+.main-menu-container h1 { /* Game Title on Main Menu */
+    color: #004C54;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+.main-menu-container .creator-credit-mainmenu { /* Specific for main menu */
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 30px;
+}
+.main-menu-options button {
+    display: block;
+    width: 250px;
+    margin: 15px auto;
+    padding: 15px;
+    font-size: 1.1em;
+}
+
+/* Narrative Intro */
+.narrative-intro-content {
+    background-color: #f9f9f9;
+    border-left: 5px solid #004C54; /* Midnight Green */
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+.narrative-intro-content h2 {
+    font-size: 1.5em;
+    color: #004C54;
+    margin-top: 0;
+}
+.narrative-intro-content p {
+    white-space: pre-wrap; /* Preserve line breaks from the JS string */
+    line-height: 1.8;
+}
+
+/* GM Office */
+.gm-office-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+.gm-office-grid button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.05em;
+}
+.gm-office-stats {
+    background-color: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+.gm-office-stats h3 {
+    margin-top:0;
+    color: #004C54;
+}
+.gm-office-stats p { margin: 5px 0; }
+.reputation-bar-container {
+    margin: 5px 0 10px;
+}
+.reputation-bar {
+    background-color: #ccc;
+    border-radius: 3px;
+    height: 10px;
+    width: 100%;
+    position: relative;
+}
+.reputation-bar-fill {
+    background-color: #007A53; /* Kelly Green for progress */
+    height: 100%;
+    border-radius: 3px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.reputation-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #555;
+}
+
+
+/* Scouting Screen */
+.scouting-info {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #eef3f3;
+    border-radius: 4px;
+}
+.scouting-names-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.scouting-names-grid button {
+    width: 100%;
+}
+.scouting-feedback {
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+.feedback-correct {
+    background-color: #d4edda; /* Light green */
+    color: #155724; /* Dark green */
+}
+.feedback-incorrect {
+    background-color: #f8d7da; /* Light red */
+    color: #721c24; /* Dark red */
+}
+
+/* Recruitment Screen */
+.player-candidate-card {
+    border: 1px solid #A5ACAF; /* Silver */
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #fdfdfd;
+}
+.player-candidate-card h3 {
+    margin-top: 0;
+    color: #004C54; /* Midnight Green */
+}
+.player-candidate-card .philosophy-name {
+    font-style: italic;
+    color: #555;
+}
+.player-candidate-card .cost {
+    font-weight: bold;
+}
+
+/* Roster Screen */
+.roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.roster-table th, .roster-table td {
+    border: 1px solid #A5ACAF; /* Silver */
+    padding: 10px;
+    text-align: left;
+}
+.roster-table th {
+    background-color: #004C54; /* Midnight Green */
+    color: #FFFFFF;
+}
+.roster-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Game Day Prep / Sim / Result */
+.game-day-info {
+    background-color: #eef3f3;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+.game-day-info h3 { margin-top: 0; color: #004C54; }
+.strategy-selection select, .strategy-selection label {
+    margin-right: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+.game-sim-log {
+    height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 15px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+.game-sim-log p { margin: 5px 0; font-size: 0.9em; }
+
+.decision-point {
+    background-color: #fff3cd; /* Light yellow */
+    border: 1px solid #ffeeba; /* Yellow */
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+}
+.decision-point p { font-weight: bold; }
+
+/* Scenario Screen */
+.scenario-content {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    border-left: 5px solid #007A53; /* Kelly Green accent */
+}
+.scenario-content .description {
+    margin-bottom: 20px;
+}
+.scenario-choices button {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    text-align: left;
+    padding: 12px;
+}
+.scenario-feedback {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #e2e3e5;
+}
+
+/* Codex Screen */
+.codex-entry-list {
+    list-style: none;
+    padding: 0;
+}
+.codex-entry-list li {
+    padding: 10px;
+    border: 1px solid #A5ACAF; /* Silver */
+    margin-bottom: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #fdfdfd;
+}
+.codex-entry-list li:hover {
+    background-color: #eef3f3;
+}
+.codex-entry-content {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+.codex-entry-content h3 { margin-top: 0; color: #004C54;}
+
+/* End Season Screen */
+.end-season-summary {
+    text-align: center;
+}
+.end-season-summary .result {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+.result-positive { color: #155724; /* Dark Green */ }
+.result-negative { color: #721c24; /* Dark Red */ }
+.epilogue {
+    margin-top: 20px;
+    font-style: italic;
+    color: #555;
+}
+
+
+/* Footer */
+#game-footer {
+    background-color: #333; /* Dark grey footer */
+    color: #A5ACAF; /* Silver text */
+    padding: 15px 25px;
+    text-align: center;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#game-footer #creator-credit {
+    flex-grow: 1;
+    text-align: center;
+}
+#game-footer button {
+    background-color: #A5ACAF;
+    color: #000000;
+    font-size: 0.9em;
+    padding: 8px 15px;
+}
+#game-footer button:hover {
+    background-color: #8e9597;
+}
+
+/* Tutorial Popup */
+.tutorial-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #004C54; /* Midnight Green */
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    width: 90%;
+    max-width: 500px;
+    border: 2px solid #A5ACAF; /* Silver border */
+}
+#tutorial-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#tutorial-text {
+    margin: 0 0 15px 0;
+    text-align: center;
+    font-size: 1.05em;
+}
+#tutorial-got-it-button {
+    background-color: #A5ACAF; /* Silver */
+    color: #000000;
+    padding: 10px 25px;
+}
+#tutorial-got-it-button:hover {
+    background-color: #8e9597;
+}
+
+/* Modal Styles */
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999; /* Below tutorial, above everything else */
+}
+
+#modal-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    min-width: 300px;
+    max-width: 600px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+    text-align: center;
+}
+#modal-content h3 {
+    margin-top: 0;
+    color: #004C54;
+}
+#modal-content button {
+    margin-top: 15px;
+}
+
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+.text-center {
+    text-align: center;
+}
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #game-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    #game-header h1 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+    }
+    #gm-info {
+        width: 100%;
+        justify-content: space-around; /* Better spacing on small screens */
+        font-size: 0.8em;
+    }
+    #jake-headshot {
+        width: 40px;
+        height: 40px;
+    }
+    #gm-stats span {
+        margin-left: 8px;
+    }
+    .main-menu-options button {
+        width: 90%;
+    }
+    .gm-office-grid {
+        grid-template-columns: 1fr; /* Stack buttons */
+    }
+    #game-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    #game-footer button {
+        width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    #game-header h1 {
+        font-size: 1.3em;
+    }
+    #gm-info {
+        flex-direction: column;
+        align-items: center;
+    }
+    #jake-headshot {
+        margin-bottom: 5px;
+    }
+    #gm-stats {
+        text-align: center;
+    }
+    #gm-stats span {
+        display: block;
+        margin: 3px 0;
+    }
+    #screen-area {
+        padding: 15px;
+    }
+    button, .button-style {
+        padding: 10px 15px;
+        font-size: 0.9em;
+    }
+    .tutorial-popup {
+        padding: 15px;
+        bottom: 10px;
+    }
+}

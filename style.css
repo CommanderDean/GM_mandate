@@ -1,0 +1,754 @@
+/* style.css */
+/* Philadelphia Eagles Colour Palette:
+   Midnight Green: #004C54
+   Silver: #A5ACAF (Primary Accent)
+   Black: #000000 (Text, accents)
+   White: #FFFFFF (Backgrounds, text)
+   Kelly Green (Classic accent, optional): #007A53
+*/
+
+/* General Body and Game Container */
+body {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Changed to Inter for a modern look */
+    background-color: #EAEFEC; /* Lighter silver/grey for overall page background */
+    color: #1A1A1A; /* Darker text for better contrast */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 1000px;
+    background-color: #FFFFFF;
+    border-radius: 12px; /* Slightly more rounded */
+    box-shadow: 0 8px 25px rgba(0, 76, 84, 0.1); /* Softer, theme-coloured shadow */
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 40px);
+    border: 1px solid #D1D5DB; /* Light border for the container */
+}
+
+/* Header */
+#game-header {
+    background: linear-gradient(to bottom, #004C54, #003B40); /* Midnight Green gradient */
+    color: #FFFFFF;
+    padding: 20px 30px; /* Increased padding */
+    border-top-left-radius: 11px; /* Match container rounding */
+    border-top-right-radius: 11px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #A5ACAF; /* Silver accent line */
+}
+
+#game-header h1 {
+    margin: 0;
+    font-size: 2em; /* Larger title */
+    font-weight: 700; /* Bolder */
+    letter-spacing: -0.5px;
+}
+
+#header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between logo and title */
+}
+
+#eagles-logo-header {
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    border: 1px solid #A5ACAF;
+}
+
+#gm-info {
+    display: flex;
+    align-items: center;
+    font-size: 0.95em;
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle background for GM info */
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+#jake-headshot {
+    width: 60px; /* Larger headshot */
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #A5ACAF; /* Prominent silver border */
+    margin-right: 12px;
+    object-fit: cover;
+}
+
+#gm-stats {
+    display: flex;
+    flex-direction: column; /* Stack stats vertically */
+    align-items: flex-start; /* Align text to the left */
+}
+#gm-stats span {
+    margin-left: 0; /* Remove previous margin */
+    margin-bottom: 2px; /* Small space between lines */
+    font-size: 0.9em;
+}
+#gm-stats span:first-child { /* GM Name */
+    font-weight: 600;
+    font-size: 1em;
+    color: #FFFFFF;
+}
+#info-week, #info-intel, #info-green {
+    font-weight: 600;
+    color: #E0E0E0; /* Lighter color for values */
+}
+#info-green { color: #86efac; /* Light green for green rating value */ }
+
+
+/* Main Screen Area */
+#screen-area {
+    padding: 30px; /* Increased padding */
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+#screen-area h2 {
+    color: #004C54;
+    margin-top: 0;
+    border-bottom: 3px solid #004C54; /* Thicker, darker underline for titles */
+    padding-bottom: 12px;
+    font-size: 1.75em; /* Larger screen titles */
+    font-weight: 600;
+    margin-bottom: 25px; /* More space below title */
+}
+
+#screen-area p {
+    margin-bottom: 18px; /* More space between paragraphs */
+    color: #374151; /* Softer black for paragraph text */
+}
+
+/* Buttons */
+button, .button-style {
+    background-color: #004C54; /* Midnight Green */
+    color: #FFFFFF;
+    border: none;
+    padding: 12px 22px; /* Slightly more padding */
+    border-radius: 6px; /* Consistent rounding */
+    cursor: pointer;
+    font-size: 1.05em; /* Larger button text */
+    font-weight: 500; /* Medium weight */
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    margin: 8px 5px; /* Adjusted margin */
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button:hover, .button-style:hover {
+    background-color: #00606C; /* Slightly lighter green on hover */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+button:active, .button-style:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+button.secondary {
+    background-color: #A5ACAF; /* Silver */
+    color: #000000;
+}
+button.secondary:hover {
+    background-color: #949A9C; /* Darker Silver */
+}
+
+button.primary-action { /* For key call-to-action buttons like "Advance Week" */
+    background-color: #007A53; /* Kelly Green */
+    color: #FFFFFF;
+}
+button.primary-action:hover {
+    background-color: #006A43;
+}
+
+
+button.disabled, button:disabled {
+    background-color: #BCC1C3; /* More distinct disabled state */
+    color: #6F797A;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Main Menu Specifics */
+.main-menu-container {
+    text-align: center;
+    padding-top: 40px;
+}
+.main-menu-container h1 {
+    color: #004C54;
+    font-size: 3em; /* Larger game title on menu */
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+.main-menu-container .creator-credit-mainmenu {
+    font-size: 1em;
+    color: #555;
+    margin-bottom: 40px;
+}
+.main-menu-options button {
+    display: block;
+    width: 280px; /* Wider buttons */
+    margin: 18px auto;
+    padding: 16px;
+    font-size: 1.15em;
+}
+
+/* Narrative Intro */
+.narrative-intro-content {
+    background-color: #F8F9FA; /* Lighter background */
+    border-left: 6px solid #004C54;
+    padding: 25px 30px; /* More padding */
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.narrative-intro-content h2 {
+    font-size: 1.6em;
+    color: #004C54;
+    margin-top: 0;
+    border-bottom: none; /* Remove default h2 underline here */
+}
+.narrative-intro-content p {
+    white-space: pre-wrap;
+    line-height: 1.7;
+    color: #212529;
+}
+
+/* GM Office */
+.gm-office-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Wider minmax */
+    gap: 20px; /* Increased gap */
+}
+.gm-office-grid button {
+    width: 100%;
+    padding: 18px; /* Larger padding for grid buttons */
+    font-size: 1.1em;
+    display: flex; /* For icon alignment if added later */
+    align-items: center;
+    justify-content: center;
+}
+
+.gm-office-stats {
+    background-color: #F8F9FA; /* Light background for the stats card */
+    padding: 25px; /* More padding */
+    border-radius: 8px;
+    margin-bottom: 30px; /* More space below stats */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #E9ECEF;
+}
+.gm-office-stats h3 {
+    margin-top:0;
+    color: #004C54;
+    font-size: 1.4em; /* Larger stats title */
+    border-bottom: 2px solid #E0E0E0;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+.gm-office-stats p { margin: 8px 0; font-size: 1.05em; }
+.gm-office-stats p span { font-weight: 600; color: #004C54; } /* Highlight values */
+
+.reputation-bar-container {
+    margin: 12px 0 15px;
+}
+.reputation-bar-label-text {
+    font-size: 0.95em;
+    color: #4A5568; /* Slightly muted label text */
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.reputation-bar {
+    background-color: #E2E8F0; /* Lighter grey for bar background */
+    border-radius: 10px; /* More rounded bar */
+    height: 16px; /* Thicker bar */
+    width: 100%;
+    position: relative;
+    overflow: hidden; /* Ensure fill stays within bounds */
+}
+.reputation-bar-fill {
+    background-color: #007A53; /* Kelly Green for progress */
+    height: 100%;
+    border-radius: 10px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: width 0.5s ease-in-out; /* Smooth transition for updates */
+}
+.reputation-bar-fill.eco { background-color: #38A169; } /* Different green for eco */
+.reputation-bar-fill.trad { background-color: #4A5568; } /* Grey for traditionalist if 100% */
+
+.reputation-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #718096; /* Muted text for min/max labels */
+    margin-top: 3px;
+}
+
+
+/* Scouting Screen */
+.scouting-info {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #eef3f3;
+    border-radius: 6px;
+    border: 1px solid #D1D5DB;
+}
+.scouting-info p { font-size: 1.05em; }
+.scouting-names-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+.scouting-names-grid button {
+    width: 100%;
+    padding: 14px; /* Good padding for clickable names */
+    background-color: #FFF;
+    color: #004C54;
+    border: 1px solid #A5ACAF;
+}
+.scouting-names-grid button:hover {
+    background-color: #eef3f3;
+    border-color: #004C54;
+}
+.scouting-names-grid button:disabled {
+    background-color: #f0f0f0;
+    color: #999;
+    border-color: #ddd;
+}
+.scouting-feedback {
+    padding: 12px 15px;
+    margin-top: 15px;
+    border-radius: 6px;
+    font-weight: 500; /* Bolder feedback */
+    font-size: 1.05em;
+}
+.feedback-correct {
+    background-color: #D1FAE5; /* Lighter green */
+    color: #065F46; /* Darker green text */
+    border: 1px solid #A7F3D0;
+}
+.feedback-incorrect {
+    background-color: #FEE2E2; /* Lighter red */
+    color: #991B1B; /* Darker red text */
+    border: 1px solid #FECACA;
+}
+
+/* Recruitment Screen */
+.player-candidate-card {
+    border: 1px solid #D1D5DB; /* Softer border */
+    padding: 20px; /* More padding */
+    margin-bottom: 20px;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.player-candidate-card h3 {
+    margin-top: 0;
+    color: #004C54;
+    font-size: 1.3em;
+}
+.player-candidate-card .philosophy-name {
+    font-style: italic;
+    color: #007A53; /* Kelly green for philosophy name */
+    font-weight: 500;
+}
+.player-candidate-card .cost {
+    font-weight: bold;
+    color: #C53030; /* Reddish for cost */
+}
+.player-candidate-card .cost span { color: #333; font-weight: normal; } /* "Intel" text normal */
+.player-candidate-card em { color: #4A5568; } /* Softer color for tenets */
+
+/* Roster Screen */
+.roster-table {
+    width: 100%;
+    border-collapse: separate; /* Use separate for rounded corners on cells */
+    border-spacing: 0;
+    margin-top: 25px;
+    border: 1px solid #A5ACAF;
+    border-radius: 8px; /* Rounded corners for table */
+    overflow: hidden; /* Clip cell backgrounds */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.roster-table th, .roster-table td {
+    border-bottom: 1px solid #A5ACAF;
+    padding: 14px 16px; /* More padding in cells */
+    text-align: left;
+    font-size: 0.95em;
+}
+.roster-table th {
+    background-color: #004C54;
+    color: #FFFFFF;
+    font-weight: 600; /* Bolder headers */
+    text-transform: uppercase; /* Uppercase headers */
+    letter-spacing: 0.5px;
+    border-bottom-width: 2px; /* Thicker line under header */
+}
+.roster-table tbody tr:nth-child(even) {
+    background-color: #F8F9FA; /* Slightly off-white for even rows */
+}
+.roster-table tbody tr:hover {
+    background-color: #E9ECEF; /* Hover effect for rows */
+}
+.roster-table td:first-child, .roster-table th:first-child { padding-left: 20px; } /* More padding for first cell */
+.roster-table td:last-child, .roster-table th:last-child { padding-right: 20px; }
+
+
+/* Game Day Prep / Sim / Result */
+.game-day-info {
+    background-color: #eef3f3;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid #D1D5DB;
+}
+.game-day-info h3 { margin-top: 0; color: #004C54; font-size: 1.3em; }
+.strategy-selection { margin-bottom: 20px; }
+.strategy-selection div { margin-bottom: 15px; }
+.strategy-selection label {
+    font-weight: 500;
+    color: #374151;
+    margin-right: 10px;
+    display: block; /* Label on its own line */
+    margin-bottom: 5px;
+}
+.strategy-selection select {
+    padding: 10px; /* Better padding for select */
+    border-radius: 6px;
+    border: 1px solid #A5ACAF;
+    font-size: 1em;
+    width: 100%; /* Full width select */
+    max-width: 350px; /* Max width for select */
+    background-color: #FFF;
+}
+
+.game-sim-log {
+    height: 250px; /* Taller log */
+    overflow-y: scroll;
+    border: 1px solid #D1D5DB;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #F8F9FA;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+.game-sim-log p { margin: 8px 0; font-size: 0.95em; line-height: 1.5; }
+.game-sim-log p[style*="font-weight: bold"] { color: #004C54; } /* Highlight important messages */
+
+.decision-point {
+    background-color: #FFFBEB; /* Lighter yellow */
+    border: 1px solid #FDE68A; /* Yellow border */
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.decision-point h4 { margin-top: 0; color: #92400E; /* Dark yellow/brown for title */ }
+.decision-point p { font-weight: 500; color: #374151; }
+.decision-point button { margin-top: 10px; background-color: #F59E0B; /* Amber button */ }
+.decision-point button:hover { background-color: #D97706; }
+
+
+/* Scenario Screen */
+.scenario-content {
+    background-color: #F8F9FA;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 6px solid #007A53; /* Kelly Green accent */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.scenario-content .description {
+    margin-bottom: 25px;
+    font-size: 1.1em;
+    color: #1A1A1A;
+}
+.scenario-choices button {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+    text-align: left;
+    padding: 14px 18px; /* More padding for choice buttons */
+    background-color: #FFF;
+    color: #004C54;
+    border: 1px solid #A5ACAF;
+}
+.scenario-choices button:hover {
+    background-color: #eef3f3;
+    border-color: #004C54;
+}
+.scenario-feedback {
+    margin-top: 25px;
+    padding: 18px;
+    border-radius: 6px;
+    background-color: #E9ECEF; /* Neutral feedback background */
+    border: 1px solid #D1D5DB;
+    font-size: 1.05em;
+}
+
+/* Codex Screen */
+.codex-entry-list {
+    list-style: none;
+    padding: 0;
+}
+.codex-entry-list li {
+    padding: 12px 18px;
+    border: 1px solid #D1D5DB;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #fdfdfd;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-size: 1.05em;
+}
+.codex-entry-list li:hover {
+    background-color: #eef3f3;
+    border-left: 4px solid #007A53; /* Accent on hover */
+    padding-left: 14px;
+}
+.codex-entry-content {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: #F8F9FA;
+    border-radius: 8px;
+    border: 1px solid #E9ECEF;
+    min-height: 100px; /* Ensure it has some height even when empty */
+}
+.codex-entry-content h3 { margin-top: 0; color: #004C54; font-size: 1.4em; }
+.codex-entry-content p { font-size: 1.05em; line-height: 1.7; }
+
+/* End Season Screen */
+.end-season-summary {
+    text-align: center;
+    padding: 20px 0;
+}
+.end-season-summary h2 { border-bottom: none; margin-bottom: 15px; }
+.end-season-summary .result {
+    font-size: 1.25em; /* Larger result text */
+    font-weight: 500; /* Medium weight */
+    margin: 12px 0;
+    padding: 10px;
+    border-radius: 6px;
+}
+.result-positive { color: #065F46; background-color: #D1FAE5; } /* Dark Green text on Light Green bg */
+.result-negative { color: #991B1B; background-color: #FEE2E2; } /* Dark Red text on Light Red bg */
+.epilogue {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #F8F9FA;
+    border-radius: 8px;
+    border: 1px solid #E9ECEF;
+    text-align: left;
+}
+.epilogue h3 { color: #004C54; margin-bottom: 10px; }
+.epilogue p {
+    font-style: normal; /* Remove default italic if not desired */
+    color: #374151;
+    line-height: 1.7;
+}
+
+
+/* Footer */
+#game-footer {
+    background-color: #333333;
+    color: #BDC1C6; /* Lighter grey for footer text */
+    padding: 18px 30px; /* Increased padding */
+    text-align: center;
+    border-bottom-left-radius: 11px; /* Match container */
+    border-bottom-right-radius: 11px;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #4F4F4F; /* Subtle top border */
+}
+#game-footer #creator-credit {
+    flex-grow: 1;
+    text-align: center;
+    font-style: italic;
+}
+#game-footer button {
+    background-color: #6c757d; /* Medium grey for footer buttons */
+    color: #FFFFFF;
+    font-size: 0.9em;
+    padding: 8px 15px;
+    box-shadow: none;
+}
+#game-footer button:hover {
+    background-color: #5a6268;
+}
+
+/* Tutorial Popup */
+.tutorial-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #003B40; /* Darker Midnight Green */
+    color: white;
+    padding: 18px 25px; /* Adjusted padding */
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+    z-index: 1000;
+    width: 90%;
+    max-width: 550px; /* Slightly wider */
+    border-top: 4px solid #A5ACAF; /* Silver accent on top */
+}
+#tutorial-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#tutorial-text {
+    margin: 0 0 18px 0;
+    text-align: center;
+    font-size: 1.1em; /* Slightly larger tutorial text */
+    line-height: 1.5;
+}
+#tutorial-got-it-button {
+    background-color: #A5ACAF;
+    color: #000000;
+    padding: 10px 28px; /* Larger got it button */
+    font-weight: 600;
+}
+#tutorial-got-it-button:hover {
+    background-color: #949A9C;
+}
+.tutorial-highlight { /* Style for highlighting elements */
+    outline: 3px solid #F59E0B; /* Amber outline */
+    box-shadow: 0 0 0 3px #F59E0B, 0 0 15px #F59E0B; /* Double shadow for emphasis */
+    border-radius: 6px;
+    transition: outline 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    position: relative; /* Ensure highlight is drawn correctly */
+    z-index: 1001; /* Above other elements but below popup if needed */
+}
+
+
+/* Modal Styles */
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 20, 22, 0.75); /* Darker, slightly transparent Midnight Green */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    backdrop-filter: blur(3px); /* Subtle blur for background */
+}
+
+#modal-content {
+    background-color: #fff;
+    padding: 30px 35px; /* More padding */
+    border-radius: 10px; /* More rounded modal */
+    min-width: 350px; /* Wider min-width */
+    max-width: 600px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    text-align: center;
+    border-top: 5px solid #004C54; /* Theme accent */
+}
+#modal-content h3 {
+    margin-top: 0;
+    color: #004C54;
+    font-size: 1.5em; /* Larger modal title */
+    margin-bottom: 20px;
+}
+#modal-content p {
+    font-size: 1.05em;
+    color: #374151;
+    margin-bottom: 20px;
+}
+#modal-content button {
+    margin-top: 10px;
+    margin-right: 10px; /* Space between modal buttons if multiple */
+}
+#modal-content button:last-child { margin-right: 0; }
+#modal-content div > button { /* For buttons directly under a div in modal, like training focus */
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    text-align: left;
+    padding: 12px 15px;
+}
+
+
+/* Utility Classes */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #game-header {
+        flex-direction: column;
+        align-items: center; /* Center header items on smaller screens */
+        padding: 15px 20px;
+    }
+    #game-header h1 {
+        font-size: 1.6em; /* Adjust title size */
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    #header-left { justify-content: center; width: 100%; }
+    #gm-info {
+        width: 100%;
+        max-width: 350px; /* Max width for GM info on mobile */
+        margin-top: 10px; /* Space between title and GM info */
+        flex-direction: column; /* Stack headshot and stats */
+        align-items: center;
+        padding: 12px;
+    }
+    #jake-headshot { width: 50px; height: 50px; margin-right: 0; margin-bottom: 8px; }
+    #gm-stats { text-align: center; align-items: center; }
+    #gm-stats span { font-size: 0.85em; }
+    #gm-stats span:first-child { font-size: 0.95em; }
+
+    .main-menu-options button { width: 90%; font-size: 1.1em; }
+    .gm-office-grid { grid-template-columns: 1fr; }
+    #game-footer { flex-direction: column; gap: 12px; padding: 15px; }
+    #game-footer button { width: 70%; }
+    #screen-area { padding: 20px; }
+    #screen-area h2 { font-size: 1.5em; }
+    .tutorial-popup { width: 95%; padding: 15px; }
+    #tutorial-text { font-size: 1em; }
+}
+
+@media (max-width: 480px) {
+    #game-header h1 { font-size: 1.4em; }
+    #gm-info { font-size: 0.8em; }
+    #jake-headshot { width: 45px; height: 45px; }
+    #gm-stats span { font-size: 0.8em; }
+    #gm-stats span:first-child { font-size: 0.9em; }
+
+    #screen-area { padding: 15px; }
+    #screen-area h2 { font-size: 1.35em; }
+    button, .button-style { padding: 10px 18px; font-size: 1em; }
+    .main-menu-options button { padding: 14px; font-size: 1em; }
+    .gm-office-grid button { padding: 15px; font-size: 1em; }
+    .tutorial-popup { padding: 12px; bottom: 10px; }
+    #tutorial-text { font-size: 0.95em; }
+    #modal-content { min-width: 90%; padding: 20px 25px; }
+    #modal-content h3 { font-size: 1.3em; }
+}
+

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The GM's Mandate</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+    <div id="game-container">
+        <header id="game-header">
+            <div id="header-left">
+                <img id="eagles-logo-header" src="images/eagles_logo_small.png" alt="Eagles Logo" style="display: none;"> <h1>The GM's Mandate</h1>
+            </div>
+            <div id="gm-info" style="display: none;"> <img id="jake-headshot" src="images/jake_headshot.png" alt="GM Jake Harris">
+                <div id="gm-stats">
+                    <span>GM Jake Harris</span>
+                    <span>Week: <span id="info-week">0</span></span>
+                    <span>Intel: <span id="info-intel">150</span></span>
+                    <span>Green: <span id="info-green">40</span></span>
+                </div>
+            </div>
+        </header>
+
+        <main id="screen-area">
+            <p>Loading EPG...</p>
+        </main>
+
+        <div id="tutorial-popup" class="tutorial-popup" style="display: none;">
+            <div id="tutorial-content">
+                <p id="tutorial-text"></p>
+                <button id="tutorial-got-it-button">Got it!</button>
+            </div>
+        </div>
+
+        <div id="modal-overlay" style="display:none;">
+            <div id="modal-content">
+                </div>
+        </div>
+
+
+        <footer id="game-footer">
+            <button id="save-button" style="display: none;">Save Game</button>
+            <span id="creator-credit">An EPG Game by Dean Watkin</span>
+            <button id="main-menu-button" style="display: none;">Main Menu</button>
+        </footer>
+    </div>
+    <script src="epg_script.js"></script>
+</body>
+</html>
