@@ -2760,7 +2760,7 @@ async function simulateGameInstance() {
                     }
                     if (window.gameVisualizer && window.gameVisualizer.ctx) {
                         window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        window.gameVisualizer.animatePlay({ yards: playYards, result: playResultForAnim, playType: playTypeForAnim, detailedPlayType: detailedPlayTypeForAnim });
+                        await window.gameVisualizer.animatePlay({ yards: playYards, result: playResultForAnim, playType: playTypeForAnim, detailedPlayType: detailedPlayTypeForAnim });
                         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
                     }
                     // Store results of this play for potential challenge on the *next* play
@@ -2968,7 +2968,7 @@ async function simulateGameInstance() {
                     }
                     if (window.gameVisualizer && window.gameVisualizer.ctx) {
                         window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        window.gameVisualizer.animatePlay({ yards: playYardsOpp, result: playResultForAnimOpp, playType: playTypeForAnimOpp, detailedPlayType: detailedPlayTypeForAnimOpp });
+                        await window.gameVisualizer.animatePlay({ yards: playYardsOpp, result: playResultForAnimOpp, playType: playTypeForAnimOpp, detailedPlayType: detailedPlayTypeForAnimOpp });
                         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
                     }
                     // Store results of this play for potential challenge on the *next* play
@@ -3492,197 +3492,216 @@ window.gameVisualizer = {
         this.drawPlayerIconWithBall();
     },
 
-    animatePlay: function(playData) { // { yards: number, result: string, playType?: string, detailedPlayType?: string }
-        if (!this.ctx || !this.canvas) return;
-        const initialPossessingTeam = this.possessingTeam; // Capture at the start
-        console.log(`Visualizer: Animating play for ${initialPossessingTeam}`, playData); // Modified log
-
-        const pixelsPerYard = this.yardLineSpacing / 10;
-        let yardageSign = (initialPossessingTeam === 'Eagles') ? 1 : -1; // Use captured value
-        const endZoneEntryDepth = this.yardLineSpacing * 0.5; // How far into the endzone the animation goes for a TD
-
-        let targetX;
-        if (playData.result === 'TD') {
-            // Ensure the animation target is clearly within the endzone
-            if (initialPossessingTeam === 'Eagles') { // Use captured value
-                targetX = this.canvas.width - this.fieldPadding - endZoneEntryDepth;
-            } else { // Opponent scoring in Eagles' endzone (left side of canvas)
-                targetX = this.fieldPadding + endZoneEntryDepth;
+    animatePlay: async function(playData) { // { yards: number, result: string, playType?: string, detailedPlayType?: string }
+        return new Promise(async (resolve) => {
+            if (!this.ctx || !this.canvas) {
+                console.warn("Visualizer context or canvas not available for animatePlay.");
+                resolve(); // Resolve immediately if visualizer isn't ready
+                return;
             }
-            console.error(`[ animatePlay TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}`); 
-            logToGameSim(`Visualizer: TD animation target set to ${targetX} for ${initialPossessingTeam}`); // Use captured
-        } else {
-            targetX = this.ballPosition.x + (playData.yards * pixelsPerYard * yardageSign);
-            console.error(`[ animatePlay non-TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}, from yards: ${playData.yards}, current ball.x: ${this.ballPosition.x}`);
-        }
-        
-        // Clamp targetX to be within playable field boundaries, respecting player icon radius
-        // The endzone target for TD is already set to be within bounds.
-        if (playData.result !== 'TD') {
-            targetX = Math.min(this.canvas.width - this.fieldPadding - this.playerIconRadius, Math.max(this.fieldPadding + this.playerIconRadius, targetX));
-        }
+            const initialPossessingTeam = this.possessingTeam; // Capture at the start
+            console.log(`Visualizer: Animating play for ${initialPossessingTeam}`, playData); // Modified log
 
+            const pixelsPerYard = this.yardLineSpacing / 10;
+            let yardageSign = (initialPossessingTeam === 'Eagles') ? 1 : -1; // Use captured value
+            const endZoneEntryDepth = this.yardLineSpacing * 0.5; // How far into the endzone the animation goes for a TD
 
-        let animationStartTime = null;
-        const animationDuration = 1000; 
-        const startX = this.ballPosition.x;
-        const displayPlayType = playData.detailedPlayType || playData.playType || (this.possessingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
-        let playTypeShownTime = 0;
-        const playTypeDuration = 1500; // Show play type for 1.5 seconds
-
-        const step = (timestamp) => {
-            if (!animationStartTime) {
-                animationStartTime = timestamp;
-                playTypeShownTime = timestamp; // Start timer for play type text
-            }
-            const elapsedOverall = timestamp - animationStartTime;
-            const animationProgress = Math.min(elapsedOverall / animationDuration, 1);
-
-            this.ballPosition.x = startX + (targetX - startX) * animationProgress;
-
-            this.drawField(); 
-            this.drawPlayerIconWithBall(); 
-
-            // Show Play Type Text
-            if (timestamp - playTypeShownTime < playTypeDuration) {
-                this.ctx.save();
-                this.ctx.font = 'bold 22px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
-                this.ctx.lineWidth = 2;
-                const textY = this.canvas.height - 35; // Positioned near bottom
-                this.ctx.strokeText(displayPlayType, this.canvas.width / 2, textY);
-                this.ctx.fillText(displayPlayType, this.canvas.width / 2, textY);
-                this.ctx.restore();
-            } else if (elapsedOverall >= playTypeDuration && elapsedOverall < playTypeDuration + 100 && animationProgress < 1) {
-                // If play type duration is over but animation isn't, redraw once without it
-                // This prevents text from lingering if animation is shorter than playTypeDuration
-                this.drawField(); 
-                this.drawPlayerIconWithBall();
-            }
-
-
-            if (animationProgress < 1) {
-                requestAnimationFrame(step);
-            } else {
-                this.ballPosition.x = targetX; 
-                console.error(`[ animatePlay END ] Set this.ballPosition.x to targetX. ball.x: ${this.ballPosition.x}, targetX: ${targetX}`);
-                this.drawField(); // Final draw after animation, ensures play type text is cleared
-                this.drawPlayerIconWithBall();
-                console.log("Visualizer: Animation complete. Player at", this.ballPosition.x);
-
-                if (displayPlayType.includes("Field Goal Attempt")) { // Check based on displayPlayType
-                    this.animateFieldGoalKick(initialPossessingTeam, playData.result === "FG_GOOD"); // Pass captured
-                } else if (playData.result === 'TD') {
-                    // Use initialPossessingTeam for the DEBUG log and for the call to animateScore
-                    console.log("DEBUG: About to call animateScore for TD. playData.result:", playData.result, "Possessing team (captured at start of animatePlay):", initialPossessingTeam);
-                    this.animateScore(initialPossessingTeam, 'TD'); // Pass captured
-                } else if (playData.result === 'Turnover' || displayPlayType.includes("Fumble!") || displayPlayType.includes("Interception!")) {
-                    this.showTurnover(displayPlayType); // Pass specific turnover type
+            let targetX;
+            if (playData.result === 'TD') {
+                // Ensure the animation target is clearly within the endzone
+                if (initialPossessingTeam === 'Eagles') { // Use captured value
+                    targetX = this.canvas.width - this.fieldPadding - endZoneEntryDepth;
+                } else { // Opponent scoring in Eagles' endzone (left side of canvas)
+                    targetX = this.fieldPadding + endZoneEntryDepth;
                 }
-                // Other play results (like punt, regular down) don't need special score/turnover animation here
+                console.error(`[ animatePlay TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}`); 
+                logToGameSim(`Visualizer: TD animation target set to ${targetX} for ${initialPossessingTeam}`); // Use captured
+            } else {
+                targetX = this.ballPosition.x + (playData.yards * pixelsPerYard * yardageSign);
+                console.error(`[ animatePlay non-TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}, from yards: ${playData.yards}, current ball.x: ${this.ballPosition.x}`);
             }
-        };
-        requestAnimationFrame(step);
+            
+            // Clamp targetX to be within playable field boundaries, respecting player icon radius
+            // The endzone target for TD is already set to be within bounds.
+            if (playData.result !== 'TD') {
+                targetX = Math.min(this.canvas.width - this.fieldPadding - this.playerIconRadius, Math.max(this.fieldPadding + this.playerIconRadius, targetX));
+            }
+
+
+            let animationStartTime = null;
+            const animationDuration = 1000; 
+            const startX = this.ballPosition.x;
+            const displayPlayType = playData.detailedPlayType || playData.playType || (this.possessingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
+            let playTypeShownTime = 0;
+            const playTypeDuration = 1500; // Show play type for 1.5 seconds
+
+            const step = async (timestamp) => {
+                if (!animationStartTime) {
+                    animationStartTime = timestamp;
+                    playTypeShownTime = timestamp; // Start timer for play type text
+                }
+                const elapsedOverall = timestamp - animationStartTime;
+                const animationProgress = Math.min(elapsedOverall / animationDuration, 1);
+
+                this.ballPosition.x = startX + (targetX - startX) * animationProgress;
+
+                this.drawField(); 
+                this.drawPlayerIconWithBall(); 
+
+                // Show Play Type Text
+                if (timestamp - playTypeShownTime < playTypeDuration) {
+                    this.ctx.save();
+                    this.ctx.font = 'bold 22px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+                    this.ctx.lineWidth = 2;
+                    const textY = this.canvas.height - 35; // Positioned near bottom
+                    this.ctx.strokeText(displayPlayType, this.canvas.width / 2, textY);
+                    this.ctx.fillText(displayPlayType, this.canvas.width / 2, textY);
+                    this.ctx.restore();
+                } else if (elapsedOverall >= playTypeDuration && elapsedOverall < playTypeDuration + 100 && animationProgress < 1) {
+                    // If play type duration is over but animation isn't, redraw once without it
+                    // This prevents text from lingering if animation is shorter than playTypeDuration
+                    this.drawField(); 
+                    this.drawPlayerIconWithBall();
+                }
+
+
+                if (animationProgress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    this.ballPosition.x = targetX; 
+                    console.error(`[ animatePlay END ] Set this.ballPosition.x to targetX. ball.x: ${this.ballPosition.x}, targetX: ${targetX}`);
+                    this.drawField(); // Final draw after animation, ensures play type text is cleared
+                    this.drawPlayerIconWithBall();
+                    console.log("Visualizer: Animation complete. Player at", this.ballPosition.x);
+
+                    if (displayPlayType.includes("Field Goal Attempt")) { // Check based on displayPlayType
+                        await this.animateFieldGoalKick(initialPossessingTeam, playData.result === "FG_GOOD"); // Pass captured
+                    } else if (playData.result === 'TD') {
+                        // Use initialPossessingTeam for the DEBUG log and for the call to animateScore
+                        console.log("DEBUG: About to call animateScore for TD. playData.result:", playData.result, "Possessing team (captured at start of animatePlay):", initialPossessingTeam);
+                        await this.animateScore(initialPossessingTeam, 'TD'); // Pass captured
+                    } else if (playData.result === 'Turnover' || displayPlayType.includes("Fumble!") || displayPlayType.includes("Interception!")) {
+                        this.showTurnover(displayPlayType); // Pass specific turnover type
+                    }
+                    // Other play results (like punt, regular down) don't need special score/turnover animation here
+                    resolve(); // Resolve the main promise for animatePlay
+                }
+            };
+            requestAnimationFrame(step);
+        });
     },
 
-    animateFieldGoalKick: function(team, isGood) {
-        if (!this.ctx || !this.canvas) return;
-        console.log(`Visualizer: Animating Field Goal Kick. Good: ${isGood}`);
-
-        const uprights = {
-            x: team === 'Eagles' ? this.canvas.width - this.fieldPadding - this.endZoneHeight * 0.2 : this.fieldPadding + this.endZoneHeight * 0.2, // Approx goal line
-            y: this.canvas.height / 2,
-            width: 10, // Width of the posts
-            crossbarHeight: this.canvas.height * 0.3,
-            postHeight: this.canvas.height * 0.3,
-            innerWidth: 60 // Distance between posts
-        };
-
-        const ballStartX = this.ballPosition.x;
-        const ballStartY = this.ballPosition.y;
-        const peakHeight = this.canvas.height * 0.3; // How high the ball goes
-        const targetX = uprights.x;
-        
-        let kickTime = 0;
-        const kickDuration = 1200; // ms
-
-        const animateKick = (timestamp) => {
-            if (!kickTime) kickTime = timestamp;
-            const elapsed = timestamp - kickTime;
-            const progress = Math.min(elapsed / kickDuration, 1);
-
-            // Parabolic arc for the ball
-            let currentX = ballStartX + (targetX - ballStartX) * progress;
-            const arc = -4 * peakHeight * progress * (progress - 1); // Simple parabola y = -4h*x*(x-1)
-            let currentY = ballStartY - arc;
-
-            // If it's the end of the animation, adjust Y for visual success/failure
-            if (progress === 1) {
-                if (isGood) {
-                    // Aim for center of posts
-                    currentY = uprights.y - uprights.crossbarHeight / 2; 
-                } else {
-                    // Aim slightly wide or short (visually)
-                    const missDirection = Math.random() < 0.5 ? -1 : 1;
-                    currentY = uprights.y - uprights.crossbarHeight / 2 + (missDirection * (uprights.innerWidth / 1.5)); // Miss wide
-                    if (Math.random() < 0.3) currentY = uprights.y + 20; // Or hit low
-                }
+    animateFieldGoalKick: async function(team, isGood) {
+        return new Promise(async (resolve) => {
+            if (!this.ctx || !this.canvas) {
+                console.warn("Visualizer context or canvas not available for animateFieldGoalKick.");
+                resolve(); // Resolve immediately if visualizer isn't ready
+                return;
             }
+            console.log(`Visualizer: Animating Field Goal Kick. Good: ${isGood}`);
 
-            this.drawField();
-            // Draw Uprights
-            this.ctx.fillStyle = '#FFD700'; // Yellow for uprights
-            this.ctx.fillRect(uprights.x - uprights.innerWidth / 2 - uprights.width / 2, uprights.y - uprights.postHeight / 2 - uprights.crossbarHeight, uprights.width, uprights.postHeight); // Left post
-            this.ctx.fillRect(uprights.x + uprights.innerWidth / 2 - uprights.width / 2, uprights.y - uprights.postHeight / 2 - uprights.crossbarHeight, uprights.width, uprights.postHeight); // Right post
-            this.ctx.fillRect(uprights.x - uprights.innerWidth / 2, uprights.y - uprights.crossbarHeight / 2 - uprights.crossbarHeight, uprights.innerWidth, uprights.width); // Crossbar
+            const uprights = {
+                x: team === 'Eagles' ? this.canvas.width - this.fieldPadding - this.endZoneHeight * 0.2 : this.fieldPadding + this.endZoneHeight * 0.2, // Approx goal line
+                y: this.canvas.height / 2,
+                width: 10, // Width of the posts
+                crossbarHeight: this.canvas.height * 0.3,
+                postHeight: this.canvas.height * 0.3,
+                innerWidth: 60 // Distance between posts
+            };
+
+            const ballStartX = this.ballPosition.x;
+            const ballStartY = this.ballPosition.y;
+            const peakHeight = this.canvas.height * 0.3; // How high the ball goes
+            const targetX = uprights.x;
             
-            // Draw ball (no player icon for FG kick)
-            this.ctx.beginPath();
-            this.ctx.ellipse(currentX, currentY, 8, 5, 0, 0, Math.PI * 2);
-            this.ctx.fillStyle = this.ballColor;
-            this.ctx.fill();
-            this.ctx.closePath();
+            let kickTime = 0;
+            const kickDuration = 1200; // ms
+
+            const animateKick = async (timestamp) => {
+                if (!kickTime) kickTime = timestamp;
+                const elapsed = timestamp - kickTime;
+                const progress = Math.min(elapsed / kickDuration, 1);
+
+                // Parabolic arc for the ball
+                let currentX = ballStartX + (targetX - ballStartX) * progress;
+                const arc = -4 * peakHeight * progress * (progress - 1); // Simple parabola y = -4h*x*(x-1)
+                let currentY = ballStartY - arc;
+
+                // If it's the end of the animation, adjust Y for visual success/failure
+                if (progress === 1) {
+                    if (isGood) {
+                        // Aim for center of posts
+                        currentY = uprights.y - uprights.crossbarHeight / 2; 
+                    } else {
+                        // Aim slightly wide or short (visually)
+                        const missDirection = Math.random() < 0.5 ? -1 : 1;
+                        currentY = uprights.y - uprights.crossbarHeight / 2 + (missDirection * (uprights.innerWidth / 1.5)); // Miss wide
+                        if (Math.random() < 0.3) currentY = uprights.y + 20; // Or hit low
+                    }
+                }
+
+                this.drawField();
+                // Draw Uprights
+                this.ctx.fillStyle = '#FFD700'; // Yellow for uprights
+                this.ctx.fillRect(uprights.x - uprights.innerWidth / 2 - uprights.width / 2, uprights.y - uprights.postHeight / 2 - uprights.crossbarHeight, uprights.width, uprights.postHeight); // Left post
+                this.ctx.fillRect(uprights.x + uprights.innerWidth / 2 - uprights.width / 2, uprights.y - uprights.postHeight / 2 - uprights.crossbarHeight, uprights.width, uprights.postHeight); // Right post
+                this.ctx.fillRect(uprights.x - uprights.innerWidth / 2, uprights.y - uprights.crossbarHeight / 2 - uprights.crossbarHeight, uprights.innerWidth, uprights.width); // Crossbar
+                
+                // Draw ball (no player icon for FG kick)
+                this.ctx.beginPath();
+                this.ctx.ellipse(currentX, currentY, 8, 5, 0, 0, Math.PI * 2);
+                this.ctx.fillStyle = this.ballColor;
+                this.ctx.fill();
+                this.ctx.closePath();
 
 
-            if (progress < 1) {
-                requestAnimationFrame(animateKick);
-            } else {
-                this.animateScore(team, isGood ? 'FG_GOOD' : 'FG_NO_GOOD');
-                // Reset ball position to midfield after the kick animation sequence is done by animateScore
-                setTimeout(() => {
-                    this.ballPosition.x = this.canvas.width / 2;
-                    this.ballPosition.y = this.canvas.height / 2;
-                }, 1500); // Delay to allow score animation to play
-            }
-        };
-        requestAnimationFrame(animateKick);
+                if (progress < 1) {
+                    requestAnimationFrame(animateKick);
+                } else {
+                    await this.animateScore(team, isGood ? 'FG_GOOD' : 'FG_NO_GOOD');
+                    // Reset ball position to midfield after the kick animation sequence is done by animateScore
+                    setTimeout(() => {
+                        this.ballPosition.x = this.canvas.width / 2;
+                        this.ballPosition.y = this.canvas.height / 2;
+                    }, 1500); // Delay to allow score animation to play
+                    resolve(); // Resolve the main promise for animateFieldGoalKick
+                }
+            };
+            requestAnimationFrame(animateKick);
+        });
     },
 
     animateScore: function(team, type) { // type: 'TD', 'FG_GOOD', 'FG_NO_GOOD'
-        if (!this.ctx || !this.canvas) return;
-        console.log(`Visualizer: Animating ${type} for ${team}`);
-        // <<< ADD DIAGNOSTIC LOG HERE >>>
-        if (type === 'TD') {
-            const endZoneWidth = this.yardLineSpacing * 1.5;
-            const opponentEndZoneBoundary = this.fieldPadding + endZoneWidth; // Right edge of opponent's endzone (lower X values)
-            const eaglesEndZoneBoundary = this.canvas.width - this.fieldPadding - endZoneWidth; // Left edge of Eagles' endzone (higher X values)
-            console.log(`TD Animation: Ball at X: ${this.ballPosition.x}. Opponent Endzone (Goal line at X=${this.fieldPadding + endZoneWidth}), Eagles Endzone (Goal line at X=${this.canvas.width - this.fieldPadding - endZoneWidth})`);
-        }
-        let message = "EVENT!";
-        if (type === 'TD') message = "TOUCHDOWN!";
-        else if (type === 'FG_GOOD') message = "FIELD GOAL IS GOOD!";
-        else if (type === 'FG_NO_GOOD') message = "FIELD GOAL IS NO GOOD!"; // Corrected message
-        
-        let animationTime = 0;
-        const textDuration = 1500; 
-        const logoFlashDuration = 1000;
-        const confettiDuration = 2000;
-        const totalDuration = textDuration + (type === 'TD' ? logoFlashDuration + confettiDuration : (type.includes('FG') ? 500 : 0 ) ); // FG text lingers a bit less
+        return new Promise((resolve) => {
+            if (!this.ctx || !this.canvas) {
+                console.warn("Visualizer context or canvas not available for animateScore.");
+                resolve(); // Resolve immediately if visualizer isn't ready
+                return;
+            }
+            console.log(`Visualizer: Animating ${type} for ${team}`);
+            // <<< ADD DIAGNOSTIC LOG HERE >>>
+            if (type === 'TD') {
+                const endZoneWidth = this.yardLineSpacing * 1.5;
+                const opponentEndZoneBoundary = this.fieldPadding + endZoneWidth; // Right edge of opponent's endzone (lower X values)
+                const eaglesEndZoneBoundary = this.canvas.width - this.fieldPadding - endZoneWidth; // Left edge of Eagles' endzone (higher X values)
+                console.log(`TD Animation: Ball at X: ${this.ballPosition.x}. Opponent Endzone (Goal line at X=${this.fieldPadding + endZoneWidth}), Eagles Endzone (Goal line at X=${this.canvas.width - this.fieldPadding - endZoneWidth})`);
+            }
+            let message = "EVENT!";
+            if (type === 'TD') message = "TOUCHDOWN!";
+            else if (type === 'FG_GOOD') message = "FIELD GOAL IS GOOD!";
+            else if (type === 'FG_NO_GOOD') message = "FIELD GOAL IS NO GOOD!"; // Corrected message
+            
+            let animationTime = 0;
+            const textDuration = 1500; 
+            const logoFlashDuration = 1000;
+            const confettiDuration = 2000;
+            const totalDuration = textDuration + (type === 'TD' ? logoFlashDuration + confettiDuration : (type.includes('FG') ? 500 : 0 ) ); // FG text lingers a bit less
 
-        const pulseSpeed = 500; 
-        const baseFontSize = type === 'TD' ? 48 : (type.includes('FG') ? 40 : 36);
+            const pulseSpeed = 500; 
+            const baseFontSize = type === 'TD' ? 48 : (type.includes('FG') ? 40 : 36);
         const maxFontIncrease = type === 'TD' ? 12 : (type.includes('FG') ? 10 : 8);
 
         const scoringTeamLogo = (team === 'Eagles' && this.eaglesLogoLoaded) ? this.eaglesLogoImg : (this.opponentLogoLoaded ? this.opponentLogoImg : null);
@@ -3761,6 +3780,7 @@ window.gameVisualizer = {
                 if (type === 'TD') this.particles = []; // Clear confetti only if it was a TD
                 this.drawField(); 
                 this.drawPlayerIconWithBall(); // Ensure player icon is back if it was a FG kick
+                    resolve(); // Resolve the promise when the animation is complete
             }
             this.ctx.restore(); // Restore context after potential shake
         };
@@ -3769,6 +3789,7 @@ window.gameVisualizer = {
             this.triggerScreenShake(8, 300);
         }
         requestAnimationFrame(animate);
+        });
     },
 
     initConfetti: function(color1, color2) {
