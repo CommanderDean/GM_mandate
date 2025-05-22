@@ -2212,7 +2212,7 @@ async function simulateGameInstance() {
             currentDriveEaglesDefStrength = Math.max(20, currentDriveEaglesDefStrength -3); 
             interceptionRiskModifier = 1.6; 
             yardVarianceMultiplier = 1.4; 
-            specificTdChanceBonus += 0.02; 
+            specificTdChanceBonus += 0.015; // Reduced from 0.02
             break;
         case "conservative_run": 
             currentDriveEaglesOffStrength = Math.max(20, currentDriveEaglesOffStrength - 4); 
@@ -2269,7 +2269,7 @@ async function simulateGameInstance() {
         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
     }
 
-    const MAX_PLAYS_PER_QUARTER = 28; // Max plays per quarter, can be tuned
+    const MAX_PLAYS_PER_QUARTER = 22; // Max plays per quarter, can be tuned
     let driveActive = false; // True if a drive is currently in progress
 
     console.log("simulateGameInstance: Starting game loop");
@@ -2367,7 +2367,7 @@ async function simulateGameInstance() {
             }
             
             console.log(`simulateGameInstance: Simulating play ${playsThisQuarter + 1} in Q${q}, Down: ${currentDown}, YardsToGo: ${yardsToGo}, BallOn: ${ballOnYardLine} (Eagles perspective)`);
-            await new Promise(resolve => setTimeout(resolve, 600)); 
+            await new Promise(resolve => setTimeout(resolve, 400)); 
 
             let tempOffStrengthMod = 0;
             let tempDefStrengthMod = 0;
@@ -2588,7 +2588,7 @@ async function simulateGameInstance() {
                         // Trait effects
                         if (player.uniqueTraitName === "Hero Ball" && Math.random() < 0.20) { 
                              logToGameSim(`⚡ ${player.name} (${philosophyTemplate.name}) with some 'Hero Ball'!`);
-                             effectiveEaglesOffStrength += 12; // Increased from +10
+                             effectiveEaglesOffStrength += 10; // Reduced from 12
                         } else if (player.uniqueTraitName === "Unit Cohesion" && Math.random() < 0.18) { 
                              logToGameSim(`🤝 'Unit Cohesion' from ${player.name} (${philosophyTemplate.name}) bolsters the drive!`);
                              effectiveEaglesOffStrength += 8; // Increased from +7
@@ -2617,7 +2617,7 @@ async function simulateGameInstance() {
                                 if (summary.includes("passing yards") || summary.includes("touchdowns") || summary.includes("deep threat")) {
                                     logToGameSim(`✨ ${player.name} (QB) looking to air it out!`);
                                     effectiveEaglesOffStrength += 5; // Increased bonus
-                                    specificTdChanceBonus += 0.02; // Increased bonus
+                                    specificTdChanceBonus += 0.015; // Reduced from 0.02
                                     yardVarianceMultiplier *= 1.15; // Slight increase in variance for big play potential
                                 }
                                 if (summary.includes("accurate") || summary.includes("composure")) {
@@ -2641,7 +2641,7 @@ async function simulateGameInstance() {
                                     logToGameSim(`🙌 ${player.name} (${player.position}) making a key reception!`);
                                     effectiveEaglesOffStrength += 4; // Increased bonus
                                     specificYardBonus += Math.floor(Math.random() * 8) + 4; // Increased bonus
-                                    specificTdChanceBonus += 0.015;
+                                    specificTdChanceBonus += 0.012; // Reduced from 0.015
                                 }
                                  if (summary.includes("reliable hands") || summary.includes("contested catch")) {
                                     logToGameSim(`🖐️ ${player.name} (${player.position}) with a secure catch!`);
@@ -2655,7 +2655,7 @@ async function simulateGameInstance() {
                     effectiveEaglesOffStrength = Math.max(10, Math.min(110, effectiveEaglesOffStrength)); 
 
                     // Score chance calculation based on effective strengths (Revised Aggressive Formula)
-                    let scoreChance = (effectiveEaglesOffStrength - (opponentTeamStrength * 0.65) + (Math.random() * 15)) / 68; // Adjusted strength multiplier from 0.75 to 0.65
+                    let scoreChance = (effectiveEaglesOffStrength - (opponentTeamStrength * 0.65) + (Math.random() * 12)) / 72; // Adjusted strength multiplier, random factor, and divisor
                     scoreChance += specificTdChanceBonus; // Add bonus from realStats or strategy
                     // Add direct score chance mod from realStatsSummary if applicable (example)
                     playersOnDrive.forEach(player => {
@@ -2671,7 +2671,7 @@ async function simulateGameInstance() {
                     let playTypeForAnim = "Offensive Play"; 
                     let detailedPlayTypeForAnim = "Offensive Play";
 
-                    if (scoreChance > 0.55) { // TD threshold lowered from 0.58
+                    if (scoreChance > 0.58) { // TD threshold adjusted
                         logToGameSim("Touchdown Eagles!", true); eaglesScore += 7; gameState.unansweredOpponentPoints = 0; playYards = currentPossessionEagles ? (100 - ballOnYardLine) : ballOnYardLine;
                         detailedPlayTypeForAnim = playYards > 20 ? "Touchdown! (Long Bomb)" : "Touchdown! (Goal Line Punch)";
                         playTypeForAnim = "Touchdown!"; // Keep for older logic if any, or simplify later
@@ -2849,13 +2849,13 @@ async function simulateGameInstance() {
                     effectiveOpponentStrength = Math.max(10, Math.min(110, effectiveOpponentStrength));
                     effectiveEaglesDefStrength = Math.max(10, Math.min(110, effectiveEaglesDefStrength));
 
-                    let opponentScoreChance = (effectiveOpponentStrength - (effectiveEaglesDefStrength * 0.65) + (Math.random() * 15)) / 68; // Adjusted strength multiplier from 0.75 to 0.65
+                    let opponentScoreChance = (effectiveOpponentStrength - (effectiveEaglesDefStrength * 0.65) + (Math.random() * 12)) / 72; // Adjusted strength multiplier, random factor, and divisor
                     let playYardsOpp = 0;
                     let playResultForAnimOpp = "Play";
                     let playTypeForAnimOpp = "Opponent Offensive Play";
                     let detailedPlayTypeForAnimOpp = "Opponent Offensive Play";
 
-                    if (opponentScoreChance > 0.57) { // Opponent TD threshold lowered from 0.60
+                    if (opponentScoreChance > 0.60) { // Opponent TD threshold adjusted
                         logToGameSim(`Touchdown ${opponent.opponentName}.`, true); opponentScore += 7; gameState.unansweredOpponentPoints += 7; playYardsOpp = currentPossessionEagles ? ballOnYardLine : (100-ballOnYardLine); 
                         detailedPlayTypeForAnimOpp = playYardsOpp > 20 ? `TD ${opponent.opponentName}! (Long Bomb)` : `TD ${opponent.opponentName}! (Short Score)`;
                         playTypeForAnimOpp = "Touchdown!";
@@ -3529,7 +3529,7 @@ window.gameVisualizer = {
 
 
             let animationStartTime = null;
-            const animationDuration = 1000; 
+            const animationDuration = 750; 
             const startX = this.ballPosition.x;
             const displayPlayType = playData.detailedPlayType || playData.playType || (this.possessingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
             let playTypeShownTime = 0;
@@ -3696,9 +3696,9 @@ window.gameVisualizer = {
             
             let animationTime = 0;
             const textDuration = 1500; 
-            const logoFlashDuration = 1000;
-            const confettiDuration = 2000;
-            const totalDuration = textDuration + (type === 'TD' ? logoFlashDuration + confettiDuration : (type.includes('FG') ? 500 : 0 ) ); // FG text lingers a bit less
+            // const logoFlashDuration = 1000; // Removed
+            // const confettiDuration = 2000; // Removed
+            const totalDuration = textDuration + (type === 'TD' ? 0 : (type.includes('FG') ? 500 : 0 ) ); // Adjusted for removed TD elements
 
             const pulseSpeed = 500; 
             const baseFontSize = type === 'TD' ? 48 : (type.includes('FG') ? 40 : 36);
@@ -3745,39 +3745,39 @@ window.gameVisualizer = {
                 this.ctx.restore();
             }
 
-            // Phase 2: Team Logo Flash (for TD only)
-            if (type === 'TD' && scoringTeamLogo && elapsed >= textDuration && elapsed < textDuration + logoFlashDuration) {
-                const logoElapsed = elapsed - textDuration;
-                let alpha;
-                if (logoElapsed < logoFadeSpeed) { // Fade in
-                    alpha = (logoElapsed / logoFadeSpeed) * logoMaxAlpha;
-                } else { // Fade out
-                    alpha = ((logoFlashDuration - logoElapsed) / logoFadeSpeed) * logoMaxAlpha;
-                }
-                alpha = Math.max(0, Math.min(logoMaxAlpha, alpha)); // Clamp alpha
+            // Phase 2: Team Logo Flash (for TD only) - REMOVED
+            // if (type === 'TD' && scoringTeamLogo && elapsed >= textDuration && elapsed < textDuration + logoFlashDuration) {
+            //     const logoElapsed = elapsed - textDuration;
+            //     let alpha;
+            //     if (logoElapsed < logoFadeSpeed) { // Fade in
+            //         alpha = (logoElapsed / logoFadeSpeed) * logoMaxAlpha;
+            //     } else { // Fade out
+            //         alpha = ((logoFlashDuration - logoElapsed) / logoFadeSpeed) * logoMaxAlpha;
+            //     }
+            //     alpha = Math.max(0, Math.min(logoMaxAlpha, alpha)); // Clamp alpha
 
-                this.ctx.save();
-                this.ctx.globalAlpha = alpha;
-                const logoSize = Math.min(this.canvas.width * 0.4, this.canvas.height * 0.5);
-                const logoX = (this.canvas.width / 2) - (logoSize / 2);
-                const logoY = (this.canvas.height / 2) - (logoSize / 2);
-                this.ctx.drawImage(scoringTeamLogo, logoX, logoY, logoSize, logoSize);
-                this.ctx.restore();
-            }
+            //     this.ctx.save();
+            //     this.ctx.globalAlpha = alpha;
+            //     const logoSize = Math.min(this.canvas.width * 0.4, this.canvas.height * 0.5);
+            //     const logoX = (this.canvas.width / 2) - (logoSize / 2);
+            //     const logoY = (this.canvas.height / 2) - (logoSize / 2);
+            //     this.ctx.drawImage(scoringTeamLogo, logoX, logoY, logoSize, logoSize);
+            //     this.ctx.restore();
+            // }
 
-            // Phase 3: Confetti (for TD only)
-            if (type === 'TD' && elapsed >= textDuration + logoFlashDuration && elapsed < totalDuration) {
-                if (this.particles.length === 0 && elapsed < textDuration + logoFlashDuration + 100) { 
-                    this.initConfetti(team === 'Eagles' ? this.homeTeamColor : this.awayTeamColor, team === 'Eagles' ? '#A5ACAF' : '#FFFFFF'); 
-                }
-                this.drawConfetti();
-                this.updateConfetti();
-            }
+            // Phase 3: Confetti (for TD only) - REMOVED
+            // if (type === 'TD' && elapsed >= textDuration + logoFlashDuration && elapsed < totalDuration) {
+            //     if (this.particles.length === 0 && elapsed < textDuration + logoFlashDuration + 100) { 
+            //         this.initConfetti(team === 'Eagles' ? this.homeTeamColor : this.awayTeamColor, team === 'Eagles' ? '#A5ACAF' : '#FFFFFF'); 
+            //     }
+            //     this.drawConfetti();
+            //     this.updateConfetti();
+            // }
             
             if (elapsed < totalDuration) {
                 requestAnimationFrame(animate);
             } else {
-                if (type === 'TD') this.particles = []; // Clear confetti only if it was a TD
+                // if (type === 'TD') this.particles = []; // Clear confetti only if it was a TD - REMOVED
                 this.drawField(); 
                 this.drawPlayerIconWithBall(); // Ensure player icon is back if it was a FG kick
                     resolve(); // Resolve the promise when the animation is complete
