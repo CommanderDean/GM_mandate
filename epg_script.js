@@ -2128,6 +2128,7 @@ async function simulateGameInstance() {
     let previousPlayResultOutcome = null;
     let previousPlayTypeOutcome = null;
     let previousDetailedPlayTypeOutcome = null;
+    let isMajorPlay = false; // Flag for dynamic pacing
 
     // Calculate team strengths based on rostered players' actual ratings
     let eaglesOffenceRatingSum = 0;
@@ -2269,7 +2270,7 @@ async function simulateGameInstance() {
         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
     }
 
-    const MAX_PLAYS_PER_QUARTER = 28; // Max plays per quarter, can be tuned
+    const MAX_PLAYS_PER_QUARTER = 14; // Max plays per quarter, can be tuned
     let driveActive = false; // True if a drive is currently in progress
 
     console.log("simulateGameInstance: Starting game loop");
@@ -2367,7 +2368,8 @@ async function simulateGameInstance() {
             }
             
             console.log(`simulateGameInstance: Simulating play ${playsThisQuarter + 1} in Q${q}, Down: ${currentDown}, YardsToGo: ${yardsToGo}, BallOn: ${ballOnYardLine} (Eagles perspective)`);
-            await new Promise(resolve => setTimeout(resolve, 600)); 
+            // Dynamic pause based on isMajorPlay (determined after play outcome)
+            // The actual pause will happen *after* determining play outcome, before animation.
 
             let tempOffStrengthMod = 0;
             let tempDefStrengthMod = 0;
@@ -2667,22 +2669,24 @@ async function simulateGameInstance() {
 
 
                     let playYards = 0;
-                    let playResultForAnim = "Play"; 
-                    let playTypeForAnim = "Offensive Play"; 
+                    let playResultForAnim = "Play";
+                    let playTypeForAnim = "Offensive Play";
                     let detailedPlayTypeForAnim = "Offensive Play";
+                    isMajorPlay = false; // Reset for current play
 
                     if (scoreChance > 0.55) { // TD threshold lowered from 0.58
                         logToGameSim("Touchdown Eagles!", true); eaglesScore += 7; gameState.unansweredOpponentPoints = 0; playYards = currentPossessionEagles ? (100 - ballOnYardLine) : ballOnYardLine;
                         detailedPlayTypeForAnim = playYards > 20 ? "Touchdown! (Long Bomb)" : "Touchdown! (Goal Line Punch)";
-                        playTypeForAnim = "Touchdown!"; // Keep for older logic if any, or simplify later
+                        playTypeForAnim = "Touchdown!";
                         playResultForAnim = "TD";
+                        isMajorPlay = true;
                         if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
-                        // ballOnYardLine will be set at the start of the new drive
                     } else if (scoreChance > 0.40 && ballOnYardLine > 65) { // FG Attempt threshold lowered from 0.45
-                        detailedPlayTypeForAnim = `Field Goal Attempt (${100 - ballOnYardLine + 17} yds)`; // Approx FG distance
+                        detailedPlayTypeForAnim = `Field Goal Attempt (${100 - ballOnYardLine + 17} yds)`;
                         playTypeForAnim = "Field Goal Attempt";
+                        isMajorPlay = true;
                         playYards = 0; 
                         // FG success now also slightly influenced by a key ST player's rating (e.g., Kicker)
                         const kicker = gameState.eaglesRoster.find(p => p.position === "K");
@@ -2697,17 +2701,18 @@ async function simulateGameInstance() {
                             playResultForAnim = "FG_NO_GOOD";
                             detailedPlayTypeForAnim = `FG NO GOOD (${100 - ballOnYardLine + 17} yds)`;
                         }
+                        isMajorPlay = true; // FG attempts are major
                         if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
                     } else if (scoreChance < (0.18 * interceptionRiskModifier * fumbleRiskModifier) ) { // Turnover base chance increased from 0.15
                         logToGameSim("Turnover! Opponent ball.", true); playYards = Math.floor(Math.random() * 5); // Small yardage for return/spot
                         detailedPlayTypeForAnim = Math.random() < 0.5 ? "FUMBLE! Eagles Lose Ball" : "INTERCEPTION! Eagles Throw Pick";
-                        playTypeForAnim = detailedPlayTypeForAnim; 
+                        playTypeForAnim = detailedPlayTypeForAnim;
                         playResultForAnim = "Turnover";
+                        isMajorPlay = true;
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
-                        // ballOnYardLine for opponent's new drive will be set based on this turnover spot (simplified next)
                     } else { // Regular play, no score or turnover
                         playYards = Math.floor(Math.random() * 25) - 4; // Range: -4 to 20 yards (base increased slightly)
                         playYards = Math.floor(playYards * yardVarianceMultiplier); // Apply variance
@@ -2723,16 +2728,20 @@ async function simulateGameInstance() {
                         ballOnYardLine += playYards;
                         yardsToGo -= playYards;
                         detailedPlayTypeForAnim = playYards > 15 ? "Long Pass Complete!" : (playYards > 7 ? "Nice Gain!" : (playYards >= 0 ? "Short Gain." : "Loss of Yards."));
-                        if (isBigPlay) detailedPlayTypeForAnim = `BIG PLAY! ${detailedPlayTypeForAnim}`;
-                        playTypeForAnim = detailedPlayTypeForAnim; // Keep generic one updated too
+                        if (isBigPlay) {
+                            detailedPlayTypeForAnim = `BIG PLAY! ${detailedPlayTypeForAnim}`;
+                            isMajorPlay = true; // Big plays are major
+                        }
+                        playTypeForAnim = detailedPlayTypeForAnim;
                         playResultForAnim = `${playYards} yd gain`;
 
                         if (yardsToGo <= 0) {
                             logToGameSim(`Eagles get a First Down! Gain of ${playYards} yards. Ball on opponent's ${100-ballOnYardLine}.`);
-                            currentDown = 1; 
+                            currentDown = 1;
                             yardsToGo = 10;
                             detailedPlayTypeForAnim = `First Down! (${detailedPlayTypeForAnim})`;
                             playTypeForAnim = detailedPlayTypeForAnim;
+                            if (currentDown === 1 && (playData.currentDown === 3 || playData.currentDown === 4)) isMajorPlay = true; // 3rd/4th down conversion
                         } else {
                             currentDown++;
                             logToGameSim(`Eagles gain ${playYards} yards. ${window.gameVisualizer.getOrdinal(currentDown)} & ${yardsToGo}. Ball on opponent's ${100-ballOnYardLine}.`);
@@ -2743,27 +2752,33 @@ async function simulateGameInstance() {
                             detailedPlayTypeForAnim = "Turnover on Downs (Eagles)";
                             playTypeForAnim = detailedPlayTypeForAnim;
                             playResultForAnim = "Turnover";
+                            isMajorPlay = true;
                             currentPossessionEagles = !currentPossessionEagles; // Possession changes
                             driveActive = false; // End of drive
-                        } else if (ballOnYardLine >= 60 && currentDown === 4 && yardsToGo > 3) { 
-                            logToGameSim("Eagles punt."); 
+                        } else if (ballOnYardLine >= 60 && currentDown === 4 && yardsToGo > 3) {
+                            logToGameSim("Eagles punt.");
                             playYards = 30 + Math.floor(Math.random() * 15); // Punt distance
                             detailedPlayTypeForAnim = "Eagles Punt";
                             playTypeForAnim = detailedPlayTypeForAnim;
                             playResultForAnim = "Punt";
-                            // ballOnYardLine += playYards; // This was incorrect for punt logic
+                            isMajorPlay = true; // Punts are major events in drive changes
                             currentPossessionEagles = !currentPossessionEagles; // Possession changes
                             driveActive = false; // End of drive
-                            // ballOnYardLine for opponent's new drive will be set based on punt result (simplified next)
                             playYards = 0; // Reset playYards for animation if it's just a punt event
                         }
+                        // If not a TD, FG, Turnover, Big Play, or critical 1st down, it's likely minor.
+                        // isMajorPlay would remain false unless explicitly set above.
                     }
+
+                    // Dynamic pause based on isMajorPlay
+                    const currentPlayPause = isMajorPlay ? 600 : 250;
+                    await new Promise(resolve => setTimeout(resolve, currentPlayPause));
+
                     if (window.gameVisualizer && window.gameVisualizer.ctx) {
                         window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        await window.gameVisualizer.animatePlay({ yards: playYards, result: playResultForAnim, playType: playTypeForAnim, detailedPlayType: detailedPlayTypeForAnim });
+                        await window.gameVisualizer.animatePlay({ yards: playYards, result: playResultForAnim, playType: playTypeForAnim, detailedPlayType: detailedPlayTypeForAnim, isMajorPlay: isMajorPlay });
                         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
                     }
-                    // Store results of this play for potential challenge on the *next* play
                     previousPlayResultOutcome = playResultForAnim;
                     previousPlayTypeOutcome = playTypeForAnim;
                     previousDetailedPlayTypeOutcome = detailedPlayTypeForAnim;
@@ -2854,12 +2869,14 @@ async function simulateGameInstance() {
                     let playResultForAnimOpp = "Play";
                     let playTypeForAnimOpp = "Opponent Offensive Play";
                     let detailedPlayTypeForAnimOpp = "Opponent Offensive Play";
+                    isMajorPlay = false; // Reset for opponent's play
 
                     if (opponentScoreChance > 0.57) { // Opponent TD threshold lowered from 0.60
-                        logToGameSim(`Touchdown ${opponent.opponentName}.`, true); opponentScore += 7; gameState.unansweredOpponentPoints += 7; playYardsOpp = currentPossessionEagles ? ballOnYardLine : (100-ballOnYardLine); 
+                        logToGameSim(`Touchdown ${opponent.opponentName}.`, true); opponentScore += 7; gameState.unansweredOpponentPoints += 7; playYardsOpp = currentPossessionEagles ? ballOnYardLine : (100-ballOnYardLine);
                         detailedPlayTypeForAnimOpp = playYardsOpp > 20 ? `TD ${opponent.opponentName}! (Long Bomb)` : `TD ${opponent.opponentName}! (Short Score)`;
                         playTypeForAnimOpp = "Touchdown!";
                         playResultForAnimOpp = "TD";
+                        isMajorPlay = true;
                         if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
@@ -2867,7 +2884,7 @@ async function simulateGameInstance() {
                         detailedPlayTypeForAnimOpp = `Opponent FG Attempt (${ballOnYardLine + 17} yds)`;
                         playTypeForAnimOpp = "Field Goal Attempt";
                         playYardsOpp = 0;
-                        
+                        isMajorPlay = true;
                         let fgSuccessChanceOppModifier = 1.0;
                         // --- "Ice the Kicker" Decision Point ---
                         const isCrucialKick = (q >= 4 && Math.abs(eaglesScore - (opponentScore + 3)) <= 3) || (q >= 3 && Math.abs(eaglesScore - (opponentScore + 3)) <= 0);
@@ -2911,6 +2928,7 @@ async function simulateGameInstance() {
                             playResultForAnimOpp = "FG_NO_GOOD";
                             detailedPlayTypeForAnimOpp = `Opponent FG NO GOOD (${ballOnYardLine + 17} yds)`;
                         }
+                        isMajorPlay = true; // FG attempts are major
                         if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
@@ -2919,22 +2937,24 @@ async function simulateGameInstance() {
                         detailedPlayTypeForAnimOpp = Math.random() < 0.5 ? "FUMBLE! Eagles Recover!" : "INTERCEPTION! Eagles Pick it Off!";
                         playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
                         playResultForAnimOpp = "Turnover";
+                        isMajorPlay = true;
                         currentPossessionEagles = !currentPossessionEagles; // Possession changes
                         driveActive = false; // End of drive
                     } else { // Regular opponent play
                         playYardsOpp = Math.floor(Math.random() * 25) - 4; // Range: -4 to 20 yards (base increased slightly)
                         let isOppBigPlay = false;
-                        // Opponent big play logic (using effectiveOpponentStrength)
-                        // Big play chance more tied to strength, and bigger potential gain
-                        if (playYardsOpp > 4 && Math.random() < (effectiveOpponentStrength / 110)) { // Denominator slightly increased for scaling
-                            playYardsOpp += Math.floor(Math.random() * 40) + 15; // Enhanced big play logic (15 to 54 yards bonus)
+                        if (playYardsOpp > 4 && Math.random() < (effectiveOpponentStrength / 110)) {
+                            playYardsOpp += Math.floor(Math.random() * 40) + 15;
                             isOppBigPlay = true;
                         }
 
-                        ballOnYardLine -= playYardsOpp; 
+                        ballOnYardLine -= playYardsOpp;
                         yardsToGo -= playYardsOpp;
                         detailedPlayTypeForAnimOpp = playYardsOpp > 15 ? "Opponent Long Gain!" : (playYardsOpp > 7 ? "Opponent Nice Gain!" : (playYardsOpp >=0 ? "Opponent Short Gain." : "Opponent Loss of Yards."));
-                        if(isOppBigPlay) detailedPlayTypeForAnimOpp = `OPP BIG PLAY! ${detailedPlayTypeForAnimOpp}`;
+                        if(isOppBigPlay) {
+                            detailedPlayTypeForAnimOpp = `OPP BIG PLAY! ${detailedPlayTypeForAnimOpp}`;
+                            isMajorPlay = true; // Big plays are major
+                        }
                         playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
                         playResultForAnimOpp = `${playYardsOpp} yd gain`;
 
@@ -2943,6 +2963,7 @@ async function simulateGameInstance() {
                             currentDown = 1; yardsToGo = 10;
                             detailedPlayTypeForAnimOpp = `Opponent First Down! (${detailedPlayTypeForAnimOpp})`;
                             playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
+                            if (currentDown === 1 && (playData.currentDown === 3 || playData.currentDown === 4)) isMajorPlay = true; // 3rd/4th down conversion
                         } else {
                             currentDown++;
                             logToGameSim(`${opponent.opponentName} gains ${playYardsOpp} yards. ${window.gameVisualizer.getOrdinal(currentDown)} & ${yardsToGo}. Ball on Eagles' ${ballOnYardLine}.`);
@@ -2952,27 +2973,31 @@ async function simulateGameInstance() {
                             detailedPlayTypeForAnimOpp = "Turnover on Downs (Opponent)";
                             playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
                             playResultForAnimOpp = "Turnover";
+                            isMajorPlay = true;
                             currentPossessionEagles = !currentPossessionEagles; // Possession changes
                             driveActive = false; // End of drive
-                        } else if (ballOnYardLine <= 40 && currentDown === 4 && yardsToGo > 3) { 
-                            logToGameSim(`${opponent.opponentName} punts.`); 
+                        } else if (ballOnYardLine <= 40 && currentDown === 4 && yardsToGo > 3) {
+                            logToGameSim(`${opponent.opponentName} punts.`);
                             playYardsOpp = 30 + Math.floor(Math.random() * 15); // Punt distance
                             detailedPlayTypeForAnimOpp = "Opponent Punt";
                             playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
                             playResultForAnimOpp = "Punt";
-                            // ballOnYardLine -= playYardsOpp; // Incorrect for punt
+                            isMajorPlay = true; // Punts are major
                             currentPossessionEagles = !currentPossessionEagles; // Possession changes
                             driveActive = false; // End of drive
                             playYardsOpp = 0; // Reset for animation if just a punt event
                         }
                     }
+
+                    // Dynamic pause based on isMajorPlay
+                    const currentPlayPauseOpp = isMajorPlay ? 600 : 250;
+                    await new Promise(resolve => setTimeout(resolve, currentPlayPauseOpp));
+
                     if (window.gameVisualizer && window.gameVisualizer.ctx) {
                         window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        await window.gameVisualizer.animatePlay({ yards: playYardsOpp, result: playResultForAnimOpp, playType: playTypeForAnimOpp, detailedPlayType: detailedPlayTypeForAnimOpp });
+                        await window.gameVisualizer.animatePlay({ yards: playYardsOpp, result: playResultForAnimOpp, playType: playTypeForAnimOpp, detailedPlayType: detailedPlayTypeForAnimOpp, isMajorPlay: isMajorPlay });
                         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
                     }
-                    // Store results of this play for potential challenge on the *next* play
-                    previousPlayResultOutcome = playResultForAnimOpp;
                     previousPlayTypeOutcome = playTypeForAnimOpp;
                     previousDetailedPlayTypeOutcome = detailedPlayTypeForAnimOpp;
                 }
@@ -3492,44 +3517,37 @@ window.gameVisualizer = {
         this.drawPlayerIconWithBall();
     },
 
-    animatePlay: async function(playData) { // { yards: number, result: string, playType?: string, detailedPlayType?: string }
+    animatePlay: async function(playData) { // { yards: number, result: string, playType?: string, detailedPlayType?: string, isMajorPlay?: boolean }
         return new Promise(async (resolve) => {
             if (!this.ctx || !this.canvas) {
                 console.warn("Visualizer context or canvas not available for animatePlay.");
                 resolve(); // Resolve immediately if visualizer isn't ready
                 return;
             }
-            const initialPossessingTeam = this.possessingTeam; // Capture at the start
-            console.log(`Visualizer: Animating play for ${initialPossessingTeam}`, playData); // Modified log
+            const initialPossessingTeam = this.possessingTeam;
+            console.log(`Visualizer: Animating play for ${initialPossessingTeam}`, playData);
 
             const pixelsPerYard = this.yardLineSpacing / 10;
-            let yardageSign = (initialPossessingTeam === 'Eagles') ? 1 : -1; // Use captured value
-            const endZoneEntryDepth = this.yardLineSpacing * 0.5; // How far into the endzone the animation goes for a TD
+            let yardageSign = (initialPossessingTeam === 'Eagles') ? 1 : -1;
+            const endZoneEntryDepth = this.yardLineSpacing * 0.5;
 
             let targetX;
             if (playData.result === 'TD') {
-                // Ensure the animation target is clearly within the endzone
-                if (initialPossessingTeam === 'Eagles') { // Use captured value
+                if (initialPossessingTeam === 'Eagles') {
                     targetX = this.canvas.width - this.fieldPadding - endZoneEntryDepth;
-                } else { // Opponent scoring in Eagles' endzone (left side of canvas)
+                } else {
                     targetX = this.fieldPadding + endZoneEntryDepth;
                 }
-                console.error(`[ animatePlay TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}`); 
-                logToGameSim(`Visualizer: TD animation target set to ${targetX} for ${initialPossessingTeam}`); // Use captured
             } else {
                 targetX = this.ballPosition.x + (playData.yards * pixelsPerYard * yardageSign);
-                console.error(`[ animatePlay non-TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}, from yards: ${playData.yards}, current ball.x: ${this.ballPosition.x}`);
             }
             
-            // Clamp targetX to be within playable field boundaries, respecting player icon radius
-            // The endzone target for TD is already set to be within bounds.
             if (playData.result !== 'TD') {
                 targetX = Math.min(this.canvas.width - this.fieldPadding - this.playerIconRadius, Math.max(this.fieldPadding + this.playerIconRadius, targetX));
             }
 
-
             let animationStartTime = null;
-            const animationDuration = 1000; 
+            const animationDuration = playData.isMajorPlay ? 1000 : 500; // Dynamic duration
             const startX = this.ballPosition.x;
             const displayPlayType = playData.detailedPlayType || playData.playType || (this.possessingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
             let playTypeShownTime = 0;
