@@ -326,7 +326,7 @@ window.onload = function() {
     initGame();
 };
 
-async function initGame(startNew = false) { // Made async to use await with fetch
+async function initGame(startNew = false, isQuickStart = false) { // Added isQuickStart parameter
     // Load player data first, as it's needed regardless of new or loaded game
     try {
         const response = await fetch('nfl_players.json');
@@ -370,28 +370,31 @@ async function initGame(startNew = false) { // Made async to use await with fetc
     }
 
     const savedData = localStorage.getItem('epgSaveData');
-    if (savedData && !startNew) {
+    if (savedData && !startNew && !isQuickStart) { // Don't load if quick starting
         loadGame();
         // After loading, ensure budget is calculated based on loaded intel
         updateBudgetBasedOnIntel();
-    } else {
+    } else { // New game or Quick Start
+        if (isQuickStart || startNew) { // Clear save for any kind of new start if it exists
+            localStorage.removeItem('epgSaveData');
+        }
         gameState = {
             ...gameState, // Spread to keep jakeHarrisSkills and other non-resetting defaults
-            currentScreen: 'narrativeIntro', // Start with narrative intro for new game
-            currentWeek: 0,
-            scoutingIntel: 500, // Initial Intel
+            currentScreen: isQuickStart ? 'gameDayPrep' : 'narrativeIntro', // Quick start goes to gameDayPrep
+            currentWeek: isQuickStart ? 1 : 0, // Quick start begins at week 1
+            scoutingIntel: isQuickStart ? 1000 : 500, // Slightly more intel for quick start for flexibility
             greenRating: 40,
             gmReputation: { progTrad: 50, ecoFiscal: 50 },
             seasonWins: 0,
             seasonLosses: 0,
-            eaglesRoster: [],
+            eaglesRoster: [], // Will be populated by setupDefaultEaglesRoster if isQuickStart
             allNFLTeams: {}, // Initialize empty object for all teams
             teamBudget: 0, // Will be set by updateBudgetBasedOnIntel
             completedScenarios: [],
             gameSchedule: [],
             isGameOver: false,
-            tutorialStep: 0, // Reset tutorial for new game
-            currentOpponentIndex: 0,
+            tutorialStep: isQuickStart ? TUTORIAL_STEPS.length : 0, // Skip tutorial for quick start
+            currentOpponentIndex: 0, // Stays 0, gameDayPrep will use this
             weeklyTrainingFocus: null,
             gameLog: [],
             recruitmentFilterState: { // Initialize for new game
@@ -402,15 +405,83 @@ async function initGame(startNew = false) { // Made async to use await with fetc
                 costFilter: ""
             }
         };
+
+        if (isQuickStart) {
+            setupDefaultEaglesRoster(); // Setup default roster BEFORE setupNewSeason
+        }
+
         // Set initial budget based on initial intel
         updateBudgetBasedOnIntel();
         // Unlock initial codex entries
         ["GREEN_RATING_INFO", "GM_REPUTATION_INFO", "JAKE_SKILLS_INFO", "PHIL_Neutral"].forEach(key => {
             if(codexEntries[key]) codexEntries[key].unlocked = true;
         });
-        setupNewSeason();
+        setupNewSeason(); // This will now correctly handle draft pool based on pre-filled Eagles roster for quick start
     }
     renderCurrentScreen();
+}
+
+function setupDefaultEaglesRoster() {
+    gameState.eaglesRoster = []; // Ensure it's empty
+    const availablePlayers = [...allNFLPlayers]; // Create a mutable copy
+
+    // Try to get a balanced roster, simple approach:
+    const desiredPositions = {
+        "QB": 1, "RB": 1, "WR": 2, "TE": 1, "LT": 1, "LG": 1, "C": 1, "RG": 1, "RT": 1,
+        "DE": 1, "DT": 1, "LB": 2, "CB": 2, "S": 1, "K": 1, "P": 1
+    };
+    let playersAddedCount = 0;
+
+    // First pass: try to fill desired positions
+    for (const pos in desiredPositions) {
+        for (let i = 0; i < desiredPositions[pos]; i++) {
+            if (playersAddedCount >= MINIMUM_ROSTER_SIZE) break;
+            const playerIndex = availablePlayers.findIndex(p => p.position === pos && !gameState.eaglesRoster.some(erP => erP.name === p.name));
+            if (playerIndex !== -1) {
+                const playerData = availablePlayers.splice(playerIndex, 1)[0];
+                const newPlayer = createPlayerFromTemplate(playerData, playerData.philosophy_bias || "Neutral", playerData.position, 75, 70, false);
+                if (newPlayer) {
+                    gameState.eaglesRoster.push(newPlayer);
+                    playersAddedCount++;
+                }
+            }
+        }
+        if (playersAddedCount >= MINIMUM_ROSTER_SIZE) break;
+    }
+
+    // Second pass: fill remaining spots if needed, from any position
+    while (playersAddedCount < MINIMUM_ROSTER_SIZE && availablePlayers.length > 0) {
+        const playerData = availablePlayers.shift(); // Take from the top (could be random)
+        if (!gameState.eaglesRoster.some(erP => erP.name === playerData.name)) { // Ensure not already added
+            const newPlayer = createPlayerFromTemplate(playerData, playerData.philosophy_bias || "Neutral", playerData.position, 70, 65, false);
+            if (newPlayer) {
+                gameState.eaglesRoster.push(newPlayer);
+                playersAddedCount++;
+            }
+        }
+    }
+    
+    // Fallback: if still not enough players (e.g., allNFLPlayers is too small), create generic ones
+    while (gameState.eaglesRoster.length < MINIMUM_ROSTER_SIZE) {
+        const randomPos = NFL_POSITIONS[Math.floor(Math.random() * NFL_POSITIONS.length)];
+        const genericPlayer = createPlayerFromTemplate(null, "Neutral", randomPos, 60, 60, true);
+        if (genericPlayer) {
+            gameState.eaglesRoster.push(genericPlayer);
+        } else {
+            // This should ideally not happen if createPlayerFromTemplate is robust
+            console.error("Failed to create a generic player for quick start roster.");
+            break; 
+        }
+    }
+
+    console.log(`Quick Start: Default Eagles roster created with ${gameState.eaglesRoster.length} players.`);
+    // Unlock philosophies of players added to the default roster
+    gameState.eaglesRoster.forEach(player => {
+        if (codexEntries[`PHIL_${player.philosophy}`] && !codexEntries[`PHIL_${player.philosophy}`].unlocked) {
+            codexEntries[`PHIL_${player.philosophy}`].unlocked = true;
+            // showNotification(`Codex Unlocked: ${codexEntries[`PHIL_${player.philosophy}`].title}`); // Notification might be too early here
+        }
+    });
 }
 
 function setupNewSeason() {
@@ -718,6 +789,7 @@ function renderMainMenuScreen() {
             <div class="main-menu-options">
                 <button id="new-game-button">New Game</button>
                 <button id="continue-game-button" style="display: none;">Continue Game</button>
+                <button id="quick-sim-button">Quick Simulation</button>
             </div>
         </div>`;
     document.getElementById('new-game-button').addEventListener('click', () => {
@@ -731,8 +803,18 @@ function renderMainMenuScreen() {
     const continueButton = document.getElementById('continue-game-button');
     if (localStorage.getItem('epgSaveData')) {
         continueButton.style.display = 'block';
-        continueButton.addEventListener('click', () => { playAudio('sfx_button_click'); initGame(false); }); // false to attempt load
+        continueButton.addEventListener('click', () => { playAudio('sfx_button_click'); initGame(false, false); }); // false for startNew, false for isQuickStart
     }
+
+    document.getElementById('quick-sim-button').addEventListener('click', () => {
+        playAudio('sfx_button_click');
+        if (localStorage.getItem('epgSaveData') && !confirm("Starting a Quick Simulation will not use existing saved progress and will start a fresh simulation environment. Are you sure?")) {
+            return;
+        }
+        // For quick sim, we don't care about overwriting save data in the same way as "New Game"
+        // as it's a temporary testing state. We will ensure it doesn't *save* over existing data unless explicitly done.
+        initGame(true, true); // true for startNew (to reset state), true for isQuickStart
+    });
 }
 
 function renderNarrativeIntroScreen() {
