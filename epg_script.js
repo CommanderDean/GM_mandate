@@ -51,6 +51,18 @@ let gameState = {
     eaglesChallengesLeft: 2 // Number of challenges available
 };
 
+const PLAY_ADVANTAGE_OUTCOMES = {
+    "12+": { category: "Breakthrough Play!", baseYardage: 40, event: "TD_CHANCE_HIGH", notes: "Big play, changes field position dramatically." },
+    "8-11": { category: "Solid Gain", baseYardage: 25, event: "FIRST_DOWN_LIKELY", notes: "Consistent offensive success." },
+    "4-7": { category: "Positive Gain", baseYardage: 10, event: "SHORT_CONVERSION_SETUP", notes: "Bread-and-butter plays." },
+    "1-3": { category: "Minimal Gain", baseYardage: 4, event: "MINIMAL_GAIN", notes: "\"Stuffing the run,\" short completion." },
+    "0": { category: "No Gain / Stalemate", baseYardage: 0, event: "NO_GAIN", notes: "Defence holds the line." },
+    "-1--3": { category: "Loss / Disruption", baseYardage: -4, event: "LOSS_OF_YARDS", notes: "Offensive struggle." },
+    "-4--7": { category: "Significant Stop", baseYardage: -8, event: "SACK_POSSIBLE", notes: "Defence dominates the play." },
+    "-8--11": { category: "Major Defensive Win", baseYardage: -12, event: "TURNOVER_RISK_INCREASED", notes: "Turns momentum." },
+    "-12-": { category: "Disaster for Offence", baseYardage: -18, event: "TURNOVER_RISK_VERY_HIGH", notes: "Catastrophic play for the offence." }
+};
+
 let allNFLPlayers = []; // Global variable to store loaded player data
 let loadedFakeNames = [];
 let loadedRealNamesNormal = [];
@@ -238,11 +250,27 @@ let codexEntries = {
 
 let sfx_button_click, sfx_intel_gain, sfx_intel_loss, sfx_win_game, sfx_lose_game;
 const audioFiles = {
-    sfx_button_click: 'audio/sfx_button_click.wav',
-    sfx_intel_gain: 'audio/sfx_intel_gain.wav',
-    sfx_intel_loss: 'audio/sfx_intel_loss.wav',
+    sfx_button_click: 'audio/sfx_button_click.mp3',
+    sfx_intel_gain: 'audio/sfx_intel_gain.mp3',
+    sfx_intel_loss: 'audio/sfx_intel_loss.mp3',
     sfx_win_game: 'audio/sfx_win_game.mp3',
     sfx_lose_game: 'audio/sfx_lose_game.mp3',
+    sfx_first_down: 'audio/sfx_first_down.mp3',
+    sfx_touchdown: 'audio/sfx_touchdown.mp3',
+    sfx_field_goal_good: 'audio/sfx_field_goal_good.mp3',
+    sfx_field_goal_no_good: 'audio/sfx_field_goal_no_good.mp3',
+    sfx_turnover_interception: 'audio/sfx_turnover_interception.mp3',
+    sfx_turnover_fumble: 'audio/sfx_turnover_fumble.mp3',
+    sfx_sack: 'audio/sfx_sack.mp3', // Although not explicitly called yet, good to have
+    sfx_safety: 'audio/sfx_safety.mp3',
+    sfx_punt: 'audio/sfx_punt.mp3',
+    sfx_kickoff: 'audio/sfx_kickoff.mp3',
+    sfx_whistle_end_play: 'audio/sfx_whistle_end_play.mp3',
+    sfx_whistle_end_quarter: 'audio/sfx_whistle_end_quarter.mp3',
+    sfx_notification: 'audio/sfx_notification.mp3',
+    sfx_scenario_trigger: 'audio/sfx_scenario_trigger.mp3',
+    sfx_roster_full: 'audio/sfx_roster_full.mp3',
+    sfx_insufficient_funds: 'audio/sfx_insufficient_funds.mp3',
 };
 
 // CRITICAL FIX: Declare DOM element variables here, but assign them in window.onload
@@ -281,8 +309,24 @@ window.onload = function() {
         sfx_intel_loss = new Audio(audioFiles.sfx_intel_loss);
         sfx_win_game = new Audio(audioFiles.sfx_win_game);
         sfx_lose_game = new Audio(audioFiles.sfx_lose_game);
+        sfx_first_down = new Audio(audioFiles.sfx_first_down);
+        sfx_touchdown = new Audio(audioFiles.sfx_touchdown);
+        sfx_field_goal_good = new Audio(audioFiles.sfx_field_goal_good);
+        sfx_field_goal_no_good = new Audio(audioFiles.sfx_field_goal_no_good);
+        sfx_turnover_interception = new Audio(audioFiles.sfx_turnover_interception);
+        sfx_turnover_fumble = new Audio(audioFiles.sfx_turnover_fumble);
+        sfx_sack = new Audio(audioFiles.sfx_sack);
+        sfx_safety = new Audio(audioFiles.sfx_safety);
+        sfx_punt = new Audio(audioFiles.sfx_punt);
+        sfx_kickoff = new Audio(audioFiles.sfx_kickoff);
+        sfx_whistle_end_play = new Audio(audioFiles.sfx_whistle_end_play);
+        sfx_whistle_end_quarter = new Audio(audioFiles.sfx_whistle_end_quarter);
+        sfx_notification = new Audio(audioFiles.sfx_notification);
+        sfx_scenario_trigger = new Audio(audioFiles.sfx_scenario_trigger);
+        sfx_roster_full = new Audio(audioFiles.sfx_roster_full);
+        sfx_insufficient_funds = new Audio(audioFiles.sfx_insufficient_funds);
     } catch (e) {
-        console.warn("Could not load audio files.", e);
+        console.warn("Could not load all audio files. Some sounds may be missing.", e);
     }
 
     // Setup event listeners for buttons that should always be present in the main UI shell
@@ -667,6 +711,22 @@ function playAudio(soundId, loop = false) {
         case 'sfx_intel_loss': sound = sfx_intel_loss; break;
         case 'sfx_win_game': sound = sfx_win_game; break;
         case 'sfx_lose_game': sound = sfx_lose_game; break;
+        case 'sfx_first_down': sound = sfx_first_down; break;
+        case 'sfx_touchdown': sound = sfx_touchdown; break;
+        case 'sfx_field_goal_good': sound = sfx_field_goal_good; break;
+        case 'sfx_field_goal_no_good': sound = sfx_field_goal_no_good; break;
+        case 'sfx_turnover_interception': sound = sfx_turnover_interception; break;
+        case 'sfx_turnover_fumble': sound = sfx_turnover_fumble; break;
+        case 'sfx_sack': sound = sfx_sack; break;
+        case 'sfx_safety': sound = sfx_safety; break;
+        case 'sfx_punt': sound = sfx_punt; break;
+        case 'sfx_kickoff': sound = sfx_kickoff; break;
+        case 'sfx_whistle_end_play': sound = sfx_whistle_end_play; break;
+        case 'sfx_whistle_end_quarter': sound = sfx_whistle_end_quarter; break;
+        case 'sfx_notification': sound = sfx_notification; break;
+        case 'sfx_scenario_trigger': sound = sfx_scenario_trigger; break;
+        case 'sfx_roster_full': sound = sfx_roster_full; break;
+        case 'sfx_insufficient_funds': sound = sfx_insufficient_funds; break;
         default: console.warn(`Sound ID "${soundId}" not recognized.`); return;
     }
     if (sound && typeof sound.play === 'function') { // Check if sound object is valid and has play method
@@ -1266,6 +1326,7 @@ window.draftPlayer = function(playerName, cost, playerData) {
     playAudio('sfx_button_click');
     // Add check for max roster size
     if (gameState.eaglesRoster.length >= MINIMUM_ROSTER_SIZE) {
+        playAudio('sfx_roster_full');
         showNotification(`Your roster is already full (${MINIMUM_ROSTER_SIZE} players). You cannot draft more players.`, true);
         return;
     }
@@ -1277,6 +1338,12 @@ window.draftPlayer = function(playerName, cost, playerData) {
     if (gameState.scoutingIntel >= intelCost && gameState.teamBudget >= playerData.contract_cost) {
         gameState.scoutingIntel -= intelCost; // Deduct calculated Intel cost
         gameState.teamBudget -= playerData.contract_cost; // Deduct contract cost from budget
+
+        // Check if budget falls below 965,000 after a successful draft
+        if (gameState.teamBudget < 965000) {
+            playAudio('sfx_insufficient_funds');
+            showNotification(`Warning: Your team budget has fallen below $965,000!`, true);
+        }
 
         // Determine philosophy based on player data, default to Neutral if not specified or invalid
         const philosophyKey = PLAYER_PHILOSOPHY_TEMPLATES.hasOwnProperty(playerData.philosophy_bias) ? playerData.philosophy_bias : "Neutral";
@@ -1320,10 +1387,10 @@ window.draftPlayer = function(playerName, cost, playerData) {
         renderRecruitmentScreen(); // This will now show the updated available players
         updateHeaderInfo(); // Update Intel display
     } else if (gameState.scoutingIntel < intelCost) {
-        playAudio('sfx_intel_loss');
+        playAudio('sfx_insufficient_funds'); // Use specific sound for insufficient funds
         showNotification(`Not enough Scouting Intel to draft this player. Intel Cost: ${intelCost}, Have: ${gameState.scoutingIntel}`, true);
     } else { // Must be insufficient budget
-         playAudio('sfx_intel_loss');
+         playAudio('sfx_insufficient_funds'); // Use specific sound for insufficient funds
          showNotification(`Not enough Team Budget to draft this player. Money Cost: $${playerData.contract_cost.toLocaleString()}, Have: $${gameState.teamBudget.toLocaleString()}`, true);
     }
 };
@@ -1476,7 +1543,8 @@ function createPlayerFromTemplate(playerData = null, philosophyKey, position, mo
         weeksWithTeam: 0,
         statsThisSeason: { gamesPlayed: 0, keyPlays: 0 },
         age: age,
-        realStatsSummary: realStatsSummary // Include real stats summary
+        realStatsSummary: realStatsSummary, // Include real stats summary
+        originalContractCost: playerData ? playerData.contract_cost : 0 // Store original contract cost
     };
 }
 
@@ -1489,7 +1557,7 @@ function renderRosterScreen() {
             <table class="roster-table">
                 <thead>
                     <tr>
-                        <th>Name</th><th>Pos.</th><th>Age</th><th>Philosophy</th><th>Morale</th><th>Loyalty</th><th>Off</th><th>Def</th><th>ST</th><th>Trait</th>
+                        <th>Name</th><th>Pos.</th><th>Age</th><th>Philosophy</th><th>Morale</th><th>Loyalty</th><th>Off</th><th>Def</th><th>ST</th><th>Trait</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -1502,13 +1570,73 @@ function renderRosterScreen() {
                     <td>${player.morale}</td><td>${player.loyalty}</td>
                     <td>${player.skills.offence}</td><td>${player.skills.defence}</td><td>${player.skills.specialTeams || '?'}</td>
                     <td>${player.uniqueTraitName}</td>
+                    <td><button class="sell-player-button" data-player-id="${player.id}" data-player-name="${player.name}" data-player-cost="${player.originalContractCost || 0}">Sell</button></td>
                 </tr>`;
         });
         content += `</tbody></table>`;
     }
     content += `<button onclick="window.navigateTo('gmOffice')" class="secondary mt-2">Back to GM Office</button>`;
     screenArea.innerHTML = content;
+
+    // Add event listeners for sell buttons
+    document.querySelectorAll('.sell-player-button').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const playerId = event.target.dataset.playerId;
+            const playerName = event.target.dataset.playerName;
+            const playerCost = parseInt(event.target.dataset.playerCost);
+            window.sellPlayer(playerId, playerName, playerCost);
+        });
+    });
 }
+
+/**
+ * Sells a player from the Eagles roster, refunds a percentage of their original cost,
+ * and returns them to the draft pool.
+ * @param {string} playerId - The unique ID of the player to sell.
+ * @param {string} playerName - The name of the player (for confirmation/notification).
+ * @param {number} originalCost - The original contract cost of the player.
+ */
+window.sellPlayer = function(playerId, playerName, originalCost) {
+    playAudio('sfx_button_click');
+    const refundPercentage = 0.5; // 50% refund
+    const refundAmount = Math.floor(originalCost * refundPercentage);
+
+    if (!confirm(`Are you sure you want to sell ${playerName} for $${refundAmount.toLocaleString()}?`)) {
+        return;
+    }
+
+    const playerIndex = gameState.eaglesRoster.findIndex(p => p.id === playerId);
+
+    if (playerIndex !== -1) {
+        const playerToSell = gameState.eaglesRoster[playerIndex];
+
+        // Remove player from roster
+        gameState.eaglesRoster.splice(playerIndex, 1);
+
+        // Add refund to budget
+        gameState.teamBudget += refundAmount;
+
+        // Add player back to draft pool (if they were a real NFL player)
+        // We need to find the original player data from allNFLPlayers to add back to draftPool
+        const originalPlayerData = allNFLPlayers.find(p => p.name === playerToSell.name);
+        if (originalPlayerData && !gameState.draftPool.some(p => p.name === originalPlayerData.name)) {
+            gameState.draftPool.push(originalPlayerData);
+            console.log(`Player ${playerName} returned to draft pool.`);
+        } else if (playerToSell.originalContractCost === 0) { // This is a basic player, don't add back to draft pool
+            console.log(`Basic player ${playerName} sold. Not returned to draft pool.`);
+        } else {
+            console.warn(`Could not find original player data for ${playerName} to return to draft pool, or player already in pool.`);
+        }
+
+        showNotification(`${playerName} sold for $${refundAmount.toLocaleString()}! Your budget is now $${gameState.teamBudget.toLocaleString()}.`, false, 5000, 'top');
+        updateBudgetBasedOnIntel(); // Ensure budget display is updated
+        renderRosterScreen(); // Re-render the roster screen
+    } else {
+        showNotification(`Error: Player ${playerName} not found on roster.`, true);
+        console.error(`Attempted to sell player with ID ${playerId} but not found.`);
+    }
+};
+
 
 function renderGameDayPrepScreen() {
     if (gameState.currentOpponentIndex >= gameState.gameSchedule.length) {
@@ -1520,12 +1648,22 @@ function renderGameDayPrepScreen() {
         screenArea.innerHTML = `<p>Error: Opponent data not found for current game.</p><button onclick="window.navigateTo('gmOffice')">Back to Office</button>`;
         return;
     }
+
+    let enhancedScoutingReport = opponent.philosophyHint;
+    if (gameState.jakeHarrisSkills.designersInsight) {
+        // Generate a more specific hint based on opponent's potential strategies
+        // This is a simplified example; could be tied to actual opponent AI tendencies if they were more complex
+        const opponentPotentialStrategies = ["Aggressive Offence", "Strong Defensive Line", "Blitz Heavy", "Conservative Run Game"];
+        const randomInsight = opponentPotentialStrategies[Math.floor(Math.random() * opponentPotentialStrategies.length)];
+        enhancedScoutingReport += ` <strong style="color: #FFD700;">(Designer's Insight: Expect them to lean on ${randomInsight}.)</strong>`;
+    }
+
     screenArea.innerHTML = `
         <h2>Game Day Preparation: Week ${gameState.currentWeek}</h2>
         <div class="game-day-info">
             <h3>Upcoming Opponent: ${opponent.opponentName}</h3>
             <p>Strength: ${opponent.strength}</p>
-            <p>Scouting Report: ${opponent.philosophyHint}</p>
+            <p>Scouting Report: ${enhancedScoutingReport}</p>
         </div>
         <div class="opponent-roster-display">
             <h3>Opponent Roster: ${opponent.opponentName}</h3>
@@ -1701,6 +1839,7 @@ window.returnToGMOfficeAfterGame = function() {
 function renderScenarioScreen(scenarioObject) {
     window.currentScenarioObject = scenarioObject; 
     let description = typeof scenarioObject.description === 'function' ? scenarioObject.description(gameState) : scenarioObject.description;
+    playAudio('sfx_scenario_trigger');
 
     let content = `
         <h2>Scenario: ${scenarioObject.title}</h2>
@@ -1910,8 +2049,13 @@ function advanceWeek() {
     playAudio('sfx_button_click');
     if (gameState.isGameOver) { window.navigateTo('endSeason'); return; }
 
-    if (gameState.currentWeek === 0 && gameState.eaglesRoster.length < MINIMUM_ROSTER_SIZE) {
-        showNotification(`Cannot start season. Roster needs at least ${MINIMUM_ROSTER_SIZE} players. You have ${gameState.eaglesRoster.length}.`, true);
+    // Check roster size before advancing to a game week
+    if (gameState.eaglesRoster.length < MINIMUM_ROSTER_SIZE) {
+        showNotification(`Your roster has ${gameState.eaglesRoster.length}/${MINIMUM_ROSTER_SIZE} players. You must have at least ${MINIMUM_ROSTER_SIZE} players to play a game. Recruit more talent!`, true);
+        // Ensure the screen stays on GM Office or navigates there if not already
+        if (gameState.currentScreen !== 'gmOffice') {
+            window.navigateTo('gmOffice');
+        }
         return;
     }
 
@@ -2159,6 +2303,314 @@ function applyChoiceOutcome(scenario, outcome, dynamicPlayerData) {
     updateHeaderInfo(); 
 }
 
+function calculatePhilosophicalHarmony(roster) {
+    if (!roster || roster.length === 0) {
+        return 50; // Default neutral harmony for empty roster
+    }
+
+    const philosophyCounts = { "Individualist": 0, "Egalitarian": 0, "Traditionalist": 0, "Neutral": 0 };
+    roster.forEach(player => {
+        if (philosophyCounts.hasOwnProperty(player.philosophy)) {
+            philosophyCounts[player.philosophy]++;
+        } else {
+            philosophyCounts["Neutral"]++; // Should not happen if players always have a valid philosophy
+        }
+    });
+
+    let harmonyScore = 70; // Start with a base that's slightly positive leaning
+    const totalPlayers = roster.length;
+
+    if (totalPlayers > 0) {
+        // Egalitarian bonus: They are glue guys
+        harmonyScore += philosophyCounts["Egalitarian"] * 5; // +5 per Egalitarian
+
+        // Individualist/Traditionalist Clash Penalty
+        // More significant penalty if both are present in large numbers
+        const indCount = philosophyCounts["Individualist"];
+        const tradCount = philosophyCounts["Traditionalist"];
+        if (indCount > 0 && tradCount > 0) {
+            // Penalty scales with the product, or minimum of the two, to represent friction
+            harmonyScore -= Math.min(indCount, tradCount) * 6; // -6 for each "pair" that could clash
+        }
+        
+        // Imbalance penalty (less severe than direct clashes)
+        // Penalize if one philosophy (excluding Neutral) heavily dominates others
+        const nonNeutralPhilosophies = ["Individualist", "Egalitarian", "Traditionalist"];
+        let maxCount = 0;
+        let minCount = totalPlayers;
+        let nonNeutralPlayerCount = 0;
+        nonNeutralPhilosophies.forEach(phil => {
+            const count = philosophyCounts[phil];
+            nonNeutralPlayerCount += count;
+            if (count > maxCount) maxCount = count;
+            if (count < minCount) minCount = count;
+        });
+
+        if (nonNeutralPlayerCount > 0) {
+            const idealSpread = nonNeutralPlayerCount / nonNeutralPhilosophies.length;
+            let deviationSum = 0;
+            nonNeutralPhilosophies.forEach(phil => {
+                deviationSum += Math.abs(philosophyCounts[phil] - idealSpread);
+            });
+            harmonyScore -= deviationSum * 1.5; // Penalty based on sum of deviations
+        }
+    }
+    
+    return Math.max(0, Math.min(100, Math.round(harmonyScore))); // Clamp 0-100
+}
+
+function getFourthDownDecision(ballOnYardLine, yardsToGo, currentPlayNumber, totalPlays, teamScore, opponentScore, isPossessingTeamEagles) {
+    const playsRemaining = totalPlays - currentPlayNumber;
+    const scoreDiff = teamScore - opponentScore; // Positive if current team is winning
+
+    // Field position from opponent's endzone (0-100, where 0 is opponent's goal line)
+    const yardsFromOpponentEndzone = isPossessingTeamEagles ? (100 - ballOnYardLine) : ballOnYardLine;
+    const fieldGoalDistance = yardsFromOpponentEndzone + 17; // LoS + 10yd endzone + 7yd snap/hold
+
+    // --- Field Goal Considerations ---
+    if (fieldGoalDistance <= 58) { // Max attemptable FG distance (approx 58 yards, ball at opponent's 41)
+        if (yardsToGo >= 5 && fieldGoalDistance <= 50) { // If long to go, but decent FG range
+             // If losing by a FG or less, or tied, or winning by a bit and want to extend
+            if (scoreDiff <= 0 || (scoreDiff > 0 && scoreDiff < 7 && playsRemaining < totalPlays / 2)) {
+                logToGameSim(`4th Down Decision: Attempting Field Goal from ${fieldGoalDistance} yards.`);
+                return "ATTEMPT_FG";
+            }
+        }
+        // If very short FG and not desperate to go for it
+        if (fieldGoalDistance <= 35 && yardsToGo > 2) {
+            logToGameSim(`4th Down Decision: Attempting short Field Goal from ${fieldGoalDistance} yards.`);
+            return "ATTEMPT_FG";
+        }
+    }
+
+    // --- Go For It Considerations ---
+    if (yardsToGo <= 5) { // 4th and short/medium
+        // If in opponent territory, or desperate
+        if (yardsFromOpponentEndzone < 50 || (scoreDiff < -7 && playsRemaining < totalPlays / 3)) {
+            logToGameSim(`4th Down Decision: Going for it on 4th & ${yardsToGo}!`);
+            return "GO_FOR_IT";
+        }
+    }
+    if (scoreDiff < -10 && playsRemaining < totalPlays / 4 && yardsFromOpponentEndzone < 60) { // Desperate late
+        logToGameSim(`4th Down Decision: Desperate - Going for it on 4th & ${yardsToGo}!`);
+        return "GO_FOR_IT";
+    }
+
+    // --- Punt Considerations ---
+    // If not in FG range, or winning comfortably, or early in game and bad field position
+    if (yardsFromOpponentEndzone > 45) { // Generally punt if outside opponent's 45 (FG distance > 62)
+        logToGameSim(`4th Down Decision: Punting. Ball at own ${isPossessingTeamEagles ? ballOnYardLine : 100 - ballOnYardLine}, ${yardsFromOpponentEndzone} from opponent endzone.`);
+        return "PUNT";
+    }
+    if (scoreDiff > 7 && playsRemaining < totalPlays / 2) { // Winning, play it safe
+        logToGameSim(`4th Down Decision: Punting to protect lead.`);
+        return "PUNT";
+    }
+
+    // Default / Fallback (could be more nuanced)
+    if (fieldGoalDistance <= 55 && yardsToGo > 3) { // If reasonable FG and not super short to go
+        logToGameSim(`4th Down Decision (Fallback): Attempting Field Goal from ${fieldGoalDistance} yards.`);
+        return "ATTEMPT_FG";
+    }
+    
+    logToGameSim(`4th Down Decision (Fallback): Going for it on 4th & ${yardsToGo}.`);
+    return "GO_FOR_IT"; // Default to going for it if no other strong signal
+}
+
+
+function selectKeyPlayer(roster, playerType, isOffense) { // playerType: 'Eagles' or 'Opponent', isOffense: boolean
+    if (!roster || roster.length === 0) return null;
+
+    // Filter for relevant players (e.g., non-K/P for general offense/defense impact)
+    const eligiblePlayers = roster.filter(p => p.position !== 'K' && p.position !== 'P');
+    if (eligiblePlayers.length === 0) return null;
+
+    // Sort by a combination of relevant skill and morale
+    eligiblePlayers.sort((a, b) => {
+        const skillA = isOffense ? (a.skills.offence || 0) : (a.skills.defence || 0);
+        const skillB = isOffense ? (b.skills.offence || 0) : (b.skills.defence || 0);
+        const moraleA = a.morale || 50;
+        const moraleB = b.morale || 50;
+        
+        let statsSummaryBonusA = 0;
+        if (a.realStatsSummary) {
+            const summary = a.realStatsSummary.toLowerCase();
+            if (summary.includes("mvp") || summary.includes("all-pro") || summary.includes("leader") || summary.includes("top performer")) {
+                statsSummaryBonusA = 10; // Arbitrary bonus for positive summary, adds to score
+            }
+        }
+        let statsSummaryBonusB = 0;
+        if (b.realStatsSummary) {
+            const summary = b.realStatsSummary.toLowerCase();
+            if (summary.includes("mvp") || summary.includes("all-pro") || summary.includes("leader") || summary.includes("top performer")) {
+                statsSummaryBonusB = 10;
+            }
+        }
+
+        // Weighted score: skill * 0.6 + morale * 0.2 + statsSummaryBonus * 0.2 (example weights)
+        const scoreA = (skillA * 0.6) + (moraleA * 0.2) + statsSummaryBonusA;
+        const scoreB = (skillB * 0.6) + (moraleB * 0.2) + statsSummaryBonusB;
+        
+        return scoreB - scoreA; // Sort descending
+    });
+
+    // Select the top player, but add a bit of randomness so it's not always the absolute best
+    if (Math.random() < 0.7 && eligiblePlayers.length > 0) { // 70% chance to pick the top player
+        return eligiblePlayers[0];
+    } else if (eligiblePlayers.length > 1 && Math.random() < 0.5) { // 50% of remaining 30% to pick 2nd best (if exists)
+        return eligiblePlayers[1];
+    } else if (eligiblePlayers.length > 0) { // Fallback to a random eligible player from the top few or any
+        return eligiblePlayers[Math.floor(Math.random() * Math.min(eligiblePlayers.length, 3))]; // Pick from top 3 or fewer
+    }
+    return null;
+}
+
+function getOpponentStrategy(eaglesScore, opponentScore, currentDown, yardsToGo, ballOnYardLine, currentPlayNumber, totalPlays) {
+    let offensiveStrategy = "balanced_offence"; // Default
+    let defensiveStrategy = "standard_defense"; // Default
+
+    const scoreDiff = opponentScore - eaglesScore; // Positive if opponent is winning
+    const playsRemaining = totalPlays - currentPlayNumber;
+    const isLateGame = playsRemaining < totalPlays / 4; // Last quarter of plays
+
+    // Offensive Strategy Logic (when opponent has the ball)
+    if (isLateGame) {
+        if (scoreDiff < -7) offensiveStrategy = "aggressive_pass"; // Losing late, go aggressive
+        else if (scoreDiff > 7) offensiveStrategy = "conservative_run"; // Winning late, run clock
+    } else {
+        if (scoreDiff < -10) offensiveStrategy = "aggressive_pass"; // Significantly behind
+        else if (currentDown === 3 && yardsToGo > 7) offensiveStrategy = "aggressive_pass";
+        else if (currentDown === 3 && yardsToGo <= 3) offensiveStrategy = "conservative_run";
+        else if (scoreDiff > 10) offensiveStrategy = "conservative_run"; // Significantly ahead
+    }
+
+    // Defensive Strategy Logic (when Eagles have the ball)
+    // Opponent's ballOnYardLine for their defensive perspective would be 100 - ballOnYardLine (if ballOnYardLine is from Eagles perspective)
+    const opponentDefendingRedZone = (100 - ballOnYardLine) < 20; // Eagles are in opponent's red zone
+
+    if (isLateGame) {
+        if (scoreDiff > 0 && scoreDiff <= 7) defensiveStrategy = "blitz_heavy_defense"; // Protecting a small lead late
+        else if (scoreDiff < -7) defensiveStrategy = "blitz_heavy_defense"; // Desperate for a stop
+    } else {
+        if (currentDown === 3 && yardsToGo > 7) defensiveStrategy = "standard_defense"; // Or bend_dont_break if AI can use it
+        else if (currentDown === 3 && yardsToGo <= 3) defensiveStrategy = "blitz_heavy_defense";
+        else if (opponentDefendingRedZone) defensiveStrategy = "blitz_heavy_defense";
+    }
+    
+    // Randomness factor to prevent predictability
+    if (Math.random() < 0.15) { // 15% chance to deviate slightly
+        const offStrategies = ["aggressive_pass", "conservative_run", "balanced_offence"];
+        const defStrategies = ["blitz_heavy_defense", "standard_defense"]; // Add "bend_dont_break_defense" if AI uses it
+        offensiveStrategy = offStrategies[Math.floor(Math.random() * offStrategies.length)];
+        defensiveStrategy = defStrategies[Math.floor(Math.random() * defStrategies.length)];
+    }
+
+    return { offensive: offensiveStrategy, defensive: defensiveStrategy };
+}
+
+
+function calculateSpecialTeamsPlayerModifier(roster, targetPosition) {
+    if (!roster || roster.length === 0) {
+        // No roster, apply modifier for a default low skill (e.g., 40)
+        const defaultSkill = 40;
+        const modifier = Math.round((defaultSkill - 70) / 5);
+        return Math.max(-4, Math.min(4, modifier)); // Clamped: -4
+    }
+
+    const specialists = roster.filter(player => player.position === targetPosition);
+
+    let bestSkill = 0; // Default to a very low skill if no specialist or specialist has no ST skill
+
+    if (specialists.length > 0) {
+        specialists.forEach(sp => {
+            if (sp.skills && typeof sp.skills.specialTeams === 'number') {
+                if (sp.skills.specialTeams > bestSkill) {
+                    bestSkill = sp.skills.specialTeams;
+                }
+            }
+        });
+        // If after checking all specialists, bestSkill is still 0 (meaning no specialist had a valid ST skill)
+        // or if no specialists were found initially, we use a default low skill.
+        if (bestSkill === 0) {
+             bestSkill = 40; // Default low skill if specialist found but no ST rating, or no specialist found
+        }
+    } else {
+        // No specialist found for the targetPosition
+        bestSkill = 40; // Default low skill
+    }
+
+    const modifier = Math.round((bestSkill - 70) / 5);
+    return Math.max(-6, Math.min(6, modifier)); // Clamped between -6 and +6 for more impact
+}
+
+function calculateTeamAttributeModifier(roster, attribute) { // attribute can be 'offence', 'defence', 'specialTeams'
+    if (!roster || roster.length === 0) {
+        return 0; // Default modifier if no roster
+    }
+    let totalSkill = 0;
+    let playerCount = 0;
+    roster.forEach(player => {
+        if (player.skills && typeof player.skills[attribute] === 'number') {
+            totalSkill += player.skills[attribute];
+            playerCount++;
+        } else if (attribute === 'specialTeams' && player.skills && typeof player.skills.specialTeams !== 'number') {
+            // Fallback for players without explicit ST rating, e.g. use a low default or skip
+            totalSkill += 40; // Example low default for ST if not present
+            playerCount++;
+        }
+    });
+
+    if (playerCount === 0) return 0; // No players with the specified skill
+
+    const averageSkill = totalSkill / playerCount;
+    // Convert to a concise modifier (e.g., if ratings are 0-100, (Rating - 70) / 5. So an 80 rating is +2, a 60 is -2).
+    const modifier = Math.round((averageSkill - 70) / 5);
+    // Clamp modifier to a reasonable range, e.g., -5 to +5 or -10 to +10, to prevent d20 from being overshadowed.
+    // User suggested -5 to +10. Let's start with a slightly tighter clamp for initial balance.
+    return Math.max(-6, Math.min(6, modifier)); // Clamped between -6 and +6 for more impact
+}
+
+function getPlayOutcomeFromAdvantage(playAdvantage) {
+    let outcomeCategoryKey;
+    if (playAdvantage >= 12) outcomeCategoryKey = "12+";
+    else if (playAdvantage >= 8) outcomeCategoryKey = "8-11";
+    else if (playAdvantage >= 4) outcomeCategoryKey = "4-7";
+    else if (playAdvantage >= 1) outcomeCategoryKey = "1-3";
+    else if (playAdvantage === 0) outcomeCategoryKey = "0";
+    else if (playAdvantage >= -3) outcomeCategoryKey = "-1--3";
+    else if (playAdvantage >= -7) outcomeCategoryKey = "-4--7";
+    else if (playAdvantage >= -11) outcomeCategoryKey = "-8--11";
+    else outcomeCategoryKey = "-12-";
+
+    const outcomeDetails = PLAY_ADVANTAGE_OUTCOMES[outcomeCategoryKey];
+    let yardage = outcomeDetails.baseYardage;
+
+    // Add some variability to yardage, e.g., +/- 0-3 yards for smaller gains, more for bigger ones
+    if (outcomeDetails.baseYardage > 0 && outcomeDetails.baseYardage <= 10) { // Minimal to Positive Gain
+        yardage += Math.floor(Math.random() * 7) - 3; // -3 to +3
+    } else if (outcomeDetails.baseYardage > 10 && outcomeDetails.baseYardage <= 25) { // Solid Gain
+        yardage += Math.floor(Math.random() * 11) - 5; // -5 to +5
+    } else if (outcomeDetails.baseYardage > 25) { // Breakthrough
+        yardage += Math.floor(Math.random() * 15) - 7; // -7 to +7
+    } else if (outcomeDetails.baseYardage < 0 && outcomeDetails.baseYardage >= -8) { // Loss/Disruption to Sig Stop
+        yardage += Math.floor(Math.random() * 5) - 2; // -2 to +2
+    } else if (outcomeDetails.baseYardage < -8) { // Major Defensive Win / Disaster
+        yardage += Math.floor(Math.random() * 7) - 3; // -3 to +3
+    }
+    // Ensure yardage doesn't become positive for a negative base, or too small for a positive base.
+    if (outcomeDetails.baseYardage > 0) yardage = Math.max(1, yardage);
+    if (outcomeDetails.baseYardage < 0) yardage = Math.min(-1, yardage);
+    if (outcomeDetails.baseYardage === 0) yardage = 0;
+
+
+    return {
+        yardage: yardage,
+        category: outcomeDetails.category,
+        event: outcomeDetails.event, // e.g., "TD_CHANCE_HIGH", "TURNOVER_RISK_INCREASED"
+        notes: outcomeDetails.notes
+    };
+}
+
 
 /**
  * Calculates the average overall strength of a team based on their roster.
@@ -2191,949 +2643,794 @@ async function simulateGameInstance() {
         return;
     }
 
-    logToGameSim(`Game Started: Philadelphia Eagles vs ${opponent.opponentName}`, true);
-    logToGameSim(`Eagles Strategy: Offense - ${gameState.playerStrategies.offensive}, Defense - ${gameState.playerStrategies.defensive}`);
-
-    if (window.gameVisualizer && window.gameVisualizer.ctx) {
-        window.gameVisualizer.setScore(0, 0, 1); 
-        // Initialize game situation for visualizer
-        window.gameVisualizer.updateGameSituation(1, 10, 3, 3); 
-    }
+    // --- NEW SIMULATION LOGIC ---
+    const TOTAL_PLAYS_PER_GAME = 30; // Increased to allow more drives and scoring opportunities
+    let currentPlayNumber = 0;
     let eaglesScore = 0;
     let opponentScore = 0;
+    let firstDownSoundPlayedThisQuarter = false; // New variable to track first down sound per quarter
+
+    // Calculate Team Level Modifiers
+    const eaglesRoster = gameState.eaglesRoster;
+    const opponentRoster = gameState.allNFLTeams[opponent.opponentName] || [];
+
+    let eaglesOffenceModifier = calculateTeamAttributeModifier(eaglesRoster, 'offence');
+    eaglesOffenceModifier += gameState.temporaryGameModifiers.offence || 0;
+
+    let eaglesDefenceModifier = calculateTeamAttributeModifier(eaglesRoster, 'defence');
+    eaglesDefenceModifier += gameState.temporaryGameModifiers.defence || 0;
+    
+    const harmonyScore = calculatePhilosophicalHarmony(eaglesRoster);
+    const harmonyModifier = Math.round((harmonyScore - 70) / 10); // e.g., 70 score = 0 mod, 80 = +1, 60 = -1. Max/min around +/-3
+    logToGameSim(`Eagles Philosophical Harmony: ${harmonyScore}/100 (Modifier: ${harmonyModifier > 0 ? '+' : ''}${harmonyModifier})`);
+    eaglesOffenceModifier += harmonyModifier;
+    eaglesDefenceModifier += harmonyModifier;
+    
+    // TODO: Add ST modifiers based on specific K/P players later
+
+    let opponentOffenceModifier = calculateTeamAttributeModifier(opponentRoster, 'offence');
+    let opponentDefenceModifier = calculateTeamAttributeModifier(opponentRoster, 'defence');
+    // TODO: Add ST modifiers for opponent later
+
+    // For ST, we'd need to identify kicker/punter.
+    let eaglesSpecialTeamsKickerModifier = calculateSpecialTeamsPlayerModifier(eaglesRoster, "K");
+    let eaglesSpecialTeamsPunterModifier = calculateSpecialTeamsPlayerModifier(eaglesRoster, "P");
+    let opponentSpecialTeamsKickerModifier = calculateSpecialTeamsPlayerModifier(opponentRoster, "K");
+    let opponentSpecialTeamsPunterModifier = calculateSpecialTeamsPlayerModifier(opponentRoster, "P");
+
+    logToGameSim(`Eagles Kicker Mod: ${eaglesSpecialTeamsKickerModifier}, Punter Mod: ${eaglesSpecialTeamsPunterModifier}`);
+    logToGameSim(`${opponent.opponentName} Kicker Mod: ${opponentSpecialTeamsKickerModifier}, Punter Mod: ${opponentSpecialTeamsPunterModifier}`);
+
+    // Simplified Game State for this phase
+    let currentPossessionEagles = Math.random() < 0.5; // Initial possession
+    let ballOnYardLine = currentPossessionEagles ? 25 : 75; // Eagles: own 25. Opp: their 25 (Eagles' 75)
     let currentDown = 1;
     let yardsToGo = 10;
-    let ballOnYardLine = 50; // 50 yard line (midfield) for Eagles, 50 for opponent (their side)
-    let eaglesTimeoutsLeft = 3;
-    let opponentTimeoutsLeft = 3;
+    // gameState.eaglesChallengesLeft = 2; // Already in gameState
 
-    let previousPlayResultOutcome = null;
-    let previousPlayTypeOutcome = null;
-    let previousDetailedPlayTypeOutcome = null;
+    logToGameSim(`New D&D Style Game Started: Philadelphia Eagles vs ${opponent.opponentName}`, true);
+    playAudio('sfx_kickoff');
 
-    // Calculate team strengths based on rostered players' actual ratings
-    let eaglesOffenceRatingSum = 0;
-    let eaglesDefenceRatingSum = 0;
-    let eaglesSpecialTeamsRatingSum = 0;
-    gameState.eaglesRoster.forEach(player => {
-        eaglesOffenceRatingSum += player.skills.offence;
-        eaglesDefenceRatingSum += player.skills.defence;
-        eaglesSpecialTeamsRatingSum += player.skills.specialTeams;
-    });
+    // Function to handle PAT decision and outcome
+    async function getPATDecisionAndOutcome(scoringTeamIsEagles, currentEaglesScore, currentOpponentScore) {
+        let patAttemptType = "XP"; // Default to Extra Point
+        let pointsAwarded = 0;
+        let patDescription = "";
 
-    const totalPlayers = gameState.eaglesRoster.length;
-    let eaglesAvgOffStrength = totalPlayers > 0 ? eaglesOffenceRatingSum / totalPlayers : 40;
-    let eaglesAvgDefStrength = totalPlayers > 0 ? eaglesDefenceRatingSum / totalPlayers : 40;
-    let eaglesAvgSTStrength = totalPlayers > 0 ? eaglesSpecialTeamsRatingSum / totalPlayers : 40; // Consider ST in simulation
+        const kickerModifier = scoringTeamIsEagles ? eaglesSpecialTeamsKickerModifier : opponentSpecialTeamsKickerModifier;
+        const teamOffensiveModifier = scoringTeamIsEagles ? eaglesOffenceModifier : opponentOffenceModifier; // Simplified, could be more nuanced
+        const opposingTeamDefensiveModifier = scoringTeamIsEagles ? opponentDefenceModifier : eaglesDefenceModifier; // Simplified
 
-    eaglesAvgOffStrength = Math.max(30, eaglesAvgOffStrength); // Floor strength
-    eaglesAvgDefStrength = Math.max(30, eaglesAvgDefStrength);
-    eaglesAvgSTStrength = Math.max(30, eaglesAvgSTStrength);
-
-    // Apply temporary game modifiers from training, eco-political state, etc.
-    eaglesAvgOffStrength += gameState.temporaryGameModifiers.offence;
-    eaglesAvgDefStrength += gameState.temporaryGameModifiers.defence;
-
-    // Log temporary modifiers if any
-    if (gameState.temporaryGameModifiers.offence !== 0 || gameState.temporaryGameModifiers.defence !== 0) {
-        logToGameSim(`Temporary Game Modifiers: Offence ${gameState.temporaryGameModifiers.offence >= 0 ? '+' : ''}${gameState.temporaryGameModifiers.offence.toFixed(1)}, Defence ${gameState.temporaryGameModifiers.defence >= 0 ? '+' : ''}${gameState.temporaryGameModifiers.defence.toFixed(1)}`, false, 'bottom');
-    }
-
-    // Initialize strategy-based modifiers
-    let interceptionRiskModifier = 1.0; // 1.0 is normal risk
-    let fumbleRiskModifier = 1.0;
-    let yardVarianceMultiplier = 1.0; // 1.0 is normal variance
-    let specificTdChanceBonus = 0;
-    let specificYardBonus = 0;
-
-
-    // Calculate Philosophical Harmony (existing logic)
-    let philosophyCounts = { "Individualist": 0, "Egalitarian": 0, "Traditionalist": 0, "Neutral": 0 };
-    gameState.eaglesRoster.forEach(player => {
-        if (philosophyCounts.hasOwnProperty(player.philosophy)) {
-            philosophyCounts[player.philosophy]++;
+        // AI Decision Logic (simple for now)
+        if (!scoringTeamIsEagles) {
+            const scoreDiff = currentOpponentScore - currentEaglesScore; // Opponent's perspective
+            if (scoreDiff < -1 && scoreDiff > -5) { // If down by 2, 3, or 4, might go for 2 to catch up
+                if (Math.random() < 0.4) patAttemptType = "2PT"; // 40% chance
+            } else if (scoreDiff === 0 || scoreDiff === 1 || scoreDiff === 4 || scoreDiff === 5) { // Tie, up 1, up 4, up 5
+                 if (Math.random() < 0.6) patAttemptType = "2PT"; // More aggressive if close or trying to make it a 2-score game
+            } else if (currentPlayNumber > TOTAL_PLAYS_PER_GAME * 0.75 && (scoreDiff < 0 || scoreDiff > 7)) { // Late game, either desperate or sealing
+                if (Math.random() < 0.5) patAttemptType = "2PT";
+            }
         } else {
-            philosophyCounts["Neutral"]++; // Default to Neutral if philosophy is somehow missing
+            // TODO: Add GM decision point for Eagles PAT choice later
+            // For now, Eagles always attempt XP
+            patAttemptType = "XP";
         }
-    });
 
-    let harmonyScore = 100; // Start with perfect harmony
+        logToGameSim(`${scoringTeamIsEagles ? "Eagles" : opponent.opponentName} will attempt a ${patAttemptType}.`);
 
-    if (totalPlayers > 0) {
-        const idealCount = totalPlayers / Object.keys(philosophyCounts).length;
-        let imbalancePenalty = 0;
-        for (const phil in philosophyCounts) {
-            imbalancePenalty += Math.pow(philosophyCounts[phil] - idealCount, 2);
-        }
-        harmonyScore -= Math.sqrt(imbalancePenalty) * 5;
-
-        const clashPenalty = Math.min(philosophyCounts["Individualist"], philosophyCounts["Traditionalist"]) * 8;
-        harmonyScore -= clashPenalty;
-
-        const egalitarianBonus = philosophyCounts["Egalitarian"] * 2;
-        harmonyScore += egalitarianBonus;
-    }
-
-    harmonyScore = Math.max(0, Math.min(100, harmonyScore));
-
-    logToGameSim(`Team Philosophical Harmony: ${Math.round(harmonyScore)}/100`);
-
-    // Apply harmony modifier to team strengths
-    const harmonyModifier = (harmonyScore - 50) / 20;
-    eaglesAvgOffStrength += harmonyModifier;
-    eaglesAvgDefStrength += harmonyModifier;
-
-
-    // Apply strategy modifiers to average strengths
-    let currentDriveEaglesOffStrength = eaglesAvgOffStrength;
-    let currentDriveEaglesDefStrength = eaglesAvgDefStrength;
-
-    switch(gameState.playerStrategies.offensive) {
-        case "aggressive_pass": 
-            currentDriveEaglesOffStrength = Math.min(100, currentDriveEaglesOffStrength + 10); 
-            currentDriveEaglesDefStrength = Math.max(20, currentDriveEaglesDefStrength -3); 
-            interceptionRiskModifier = 1.6; 
-            yardVarianceMultiplier = 1.4; 
-            specificTdChanceBonus += 0.02; 
-            break;
-        case "conservative_run": 
-            currentDriveEaglesOffStrength = Math.max(20, currentDriveEaglesOffStrength - 4); 
-            currentDriveEaglesDefStrength = Math.min(100, currentDriveEaglesDefStrength +2); 
-            fumbleRiskModifier = 0.7; 
-            yardVarianceMultiplier = 0.6; 
-            break;
-        case "exploit_matchups": 
-            currentDriveEaglesOffStrength = Math.min(100, currentDriveEaglesOffStrength + (gameState.jakeHarrisSkills.designersInsight ? 6:4)); 
-            // Potentially add logic here if a specific opponent weakness is identified
-            break;
-    }
-    switch(gameState.playerStrategies.defensive) {
-        case "blitz_heavy": 
-            currentDriveEaglesDefStrength = Math.min(100, currentDriveEaglesDefStrength + 10); 
-            currentDriveEaglesOffStrength = Math.max(20, currentDriveEaglesOffStrength -2); 
-            // Blitzing might leave defense vulnerable to big plays if it doesn't get home
-            // This could be modeled by increasing opponent's yardVarianceMultiplier if blitz fails
-            break;
-        case "bend_dont_break": 
-            currentDriveEaglesDefStrength = Math.max(20, currentDriveEaglesDefStrength - 4); 
-            // Higher chance to prevent TDs in red zone, but might give up more yards between 20s
-            break;
-        case "shutdown_star": 
-            currentDriveEaglesDefStrength = Math.min(100, currentDriveEaglesDefStrength + (gameState.jakeHarrisSkills.cricketersComposure ? 6:4)); 
-            // Add logic to identify opponent star and reduce their effectiveness
-            if (opponentRoster.some(p => (p.skills.offence > 90 || p.skills.defence > 90))) { // Check for any player with rating > 90
-                logToGameSim(`Eagles focusing on shutting down ${opponent.opponentName}'s star power!`);
-                opponentTeamStrength = Math.max(10, opponentTeamStrength - 5); // Reduce opponent's effective strength
+        if (patAttemptType === "XP") {
+            const xpRoll = Math.floor(Math.random() * 20) + 1;
+            const xpSuccessTarget = 5; // Very easy target
+            const xpScore = xpRoll + kickerModifier;
+            if (xpScore >= xpSuccessTarget) {
+                pointsAwarded = 1;
+                patDescription = "Extra Point IS GOOD!";
+                logToGameSim(`XP Attempt: Roll ${xpRoll} + K_Mod ${kickerModifier} = ${xpScore}. Target >= ${xpSuccessTarget}. GOOD!`);
+            } else {
+                patDescription = "Extra Point IS NO GOOD!";
+                logToGameSim(`XP Attempt: Roll ${xpRoll} + K_Mod ${kickerModifier} = ${xpScore}. Target >= ${xpSuccessTarget}. NO GOOD!`);
             }
-            break;
+        } else { // 2PT Conversion
+            logToGameSim(`${scoringTeamIsEagles ? "Eagles" : opponent.opponentName} going for Two! Ball on the 2-yard line.`);
+            const twoPtAttackRoll = Math.floor(Math.random() * 20) + 1;
+            const twoPtDefenceRoll = Math.floor(Math.random() * 20) + 1;
+            // Apply a situational modifier for being close to goal line (e.g., defense gets slight edge)
+            const twoPtAttackScore = twoPtAttackRoll + teamOffensiveModifier;
+            const twoPtDefenceScore = twoPtDefenceRoll + opposingTeamDefensiveModifier + 1; // Small defensive bonus for goal line stand
+
+            if (twoPtAttackScore > twoPtDefenceScore) {
+                pointsAwarded = 2;
+                patDescription = "Two-Point Conversion IS GOOD!";
+                logToGameSim(`2PT Attempt: Attack ${twoPtAttackScore} (Roll ${twoPtAttackRoll}) vs Defence ${twoPtDefenceScore} (Roll ${twoPtDefenceRoll}). GOOD!`);
+            } else {
+                patDescription = "Two-Point Conversion IS NO GOOD!";
+                logToGameSim(`2PT Attempt: Attack ${twoPtAttackScore} (Roll ${twoPtAttackRoll}) vs Defence ${twoPtDefenceScore} (Roll ${twoPtDefenceRoll}). NO GOOD!`);
+            }
+            // Animate 2PT as a short play
+            if (window.gameVisualizer && window.gameVisualizer.ctx) {
+                const twoPtActingTeam = scoringTeamIsEagles ? 'Eagles' : 'Opponent';
+                // Ball is at the 2-yard line for a 2PT conversion.
+                // Use the new helper to get the correct pixel X.
+                window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(2, scoringTeamIsEagles);
+                window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+                
+                let visualizerResult = pointsAwarded === 2 ? "2PT GOOD" : "2PT NO GOOD";
+                let animPlayType = "2PT Conversion";
+
+                await window.gameVisualizer.animatePlay({
+                    yards: pointsAwarded === 2 ? 2 : 0, // Simulate 2 yards for success, 0 for failure
+                    result: visualizerResult,
+                    playType: animPlayType,
+                    detailedPlayType: `${animPlayType} (${visualizerResult})`
+                }, twoPtActingTeam);
+            }
+        }
+        logToGameSim(patDescription, true);
+        return { points: pointsAwarded, description: patDescription };
     }
 
-    // Calculate opponent strength dynamically based on their roster
-    const opponentRoster = gameState.allNFLTeams[opponent.opponentName] || [];
-    let calculatedOpponentRosterStrength = calculateTeamStrength(opponentRoster);
-    let opponentTeamStrength;
-
-    if (opponentRoster.length > 0) {
-        // Blend calculated roster strength with scheduled strength
-        opponentTeamStrength = (calculatedOpponentRosterStrength * 0.7) + (opponent.strength * 0.3);
-        logToGameSim(`${opponent.opponentName} Effective Team Strength (70% Roster, 30% Schedule): ${opponentTeamStrength.toFixed(1)} (Roster: ${calculatedOpponentRosterStrength.toFixed(1)}, Schedule: ${opponent.strength})`);
-    } else {
-        // Fallback to scheduled strength if no roster
-        opponentTeamStrength = opponent.strength;
-        logToGameSim(`${opponent.opponentName} Team Strength (from schedule - no roster data): ${opponentTeamStrength.toFixed(1)}`);
-    }
-    opponentTeamStrength = Math.max(10, Math.min(100, opponentTeamStrength)); // Clamp final strength
-    gameState.unansweredOpponentPoints = 0; // Reset at the start of each game
-
-
-    let currentPossessionEagles = Math.random() < 0.5; // Initial possession
     if (window.gameVisualizer && window.gameVisualizer.ctx) {
+        window.gameVisualizer.setScore(eaglesScore, opponentScore, 1); // Quarter is just for display now
         window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
+        window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, gameState.eaglesChallengesLeft, 3); // Assuming 3 opponent timeouts for now
     }
 
-    const MAX_PLAYS_PER_QUARTER = 28; // Max plays per quarter, can be tuned
-    let driveActive = false; // True if a drive is currently in progress
+    while (currentPlayNumber < TOTAL_PLAYS_PER_GAME) {
+        currentPlayNumber++;
+        logToGameSim(`--- Play ${currentPlayNumber}/${TOTAL_PLAYS_PER_GAME} ---`, true);
 
-    console.log("simulateGameInstance: Starting game loop");
-    for (let q = 1; q <= 4; q++) {
-        logToGameSim(`--- Quarter ${q} Begins --- Score: Eagles ${eaglesScore} - ${opponent.opponentName} ${opponentScore}`, true);
-        if (window.gameVisualizer && window.gameVisualizer.ctx) {
-            window.gameVisualizer.setScore(eaglesScore, opponentScore, q); // Updates score and quarter
+        let attackingTeamModifier, defendingTeamModifier;
+        let attackerIsEagles = currentPossessionEagles;
+
+        // --- Apply Strategic Modifiers ---
+        let eaglesStrategyOffenceMod = 0;
+        let eaglesStrategyDefenceMod = 0;
+        let opponentStrategyOffenceMod = 0;
+        let opponentStrategyDefenceMod = 0;
+
+        // Eagles Strategies (from gameState.playerStrategies, set in gameDayPrep)
+        let composureOffenceBoost = 0;
+        let composureDefenceBoost = 0;
+
+        if (gameState.playerStrategies.offensive === "aggressive_pass") {
+            eaglesStrategyOffenceMod = 2;
+        } else if (gameState.playerStrategies.offensive === "conservative_run") {
+            eaglesStrategyOffenceMod = 0; // Changed from -1 to 0
+            logToGameSim("Conservative Run strategy active: Focus on ball security, less explosive plays.");
+        } else if (gameState.playerStrategies.offensive === "exploit_matchups") {
+            eaglesStrategyOffenceMod = 1; // Small general boost
         }
-        console.log(`simulateGameInstance: Start of Quarter ${q}`);
-        let playsThisQuarter = 0;
-        
-        // --- Halftime Adjustments Decision Point ---
-        if (q === 3 && playsThisQuarter === 0) { // Check at the very start of Q3
-            const halftimeContext = {
-                text: `It's Halftime, GM! Score: Eagles ${eaglesScore} - ${opponent.opponentName} ${opponentScore}. What adjustments will you make?`,
-                choices: [
-                    { text: "Focus on Offensive Adjustments.", action: "halftime_offense" },
-                    { text: "Focus on Defensive Adjustments.", action: "halftime_defense" },
-                    { text: "Rally the Team - Morale Boost.", action: "halftime_rally" },
-                    { text: "No major changes, stick to the plan.", action: "halftime_no_change" }
-                ]
-            };
-            const userHalftimeChoice = await new Promise(resolveUserChoice => {
-                renderDecisionPointUI(halftimeContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-            });
-            logToGameSim(`GM Halftime Adjustment: ${userHalftimeChoice}`);
 
-            if (userHalftimeChoice === "halftime_offense") {
-                currentDriveEaglesOffStrength += 5; // Apply to the base for the rest of the game
-                eaglesAvgOffStrength += 5; // Ensure it persists beyond current drive logic
-                interceptionRiskModifier *= 0.9;
-                gameState.gmReputation.progTrad = Math.max(0, gameState.gmReputation.progTrad - 2);
-                logToGameSim("GM makes key offensive adjustments! Eagles offense +5 strength, reduced INT risk.", true);
-            } else if (userHalftimeChoice === "halftime_defense") {
-                currentDriveEaglesDefStrength += 5; // Apply to the base for the rest of the game
-                eaglesAvgDefStrength += 5; // Ensure it persists
-                // Conceptual: opponentTeamStrength effectively reduced for a couple of drives
-                // This is hard to implement directly without more state tracking for opponent drives.
-                // For now, the Eagles' defensive boost will have to suffice.
-                gameState.gmReputation.progTrad = Math.min(100, gameState.gmReputation.progTrad + 2);
-                logToGameSim("GM makes crucial defensive adjustments! Eagles defense +5 strength.", true);
-            } else if (userHalftimeChoice === "halftime_rally") {
-                gameState.eaglesRoster.forEach(p => {
-                    p.morale = Math.min(100, Math.round(p.morale + 5));
-                    if (p.philosophy === "Egalitarian" && Math.random() < 0.25) {
-                        p.loyalty = Math.min(100, p.loyalty + 2);
-                    }
-                });
-                logToGameSim("GM delivers a rousing halftime speech! Team morale boosted.", true);
-            } else { // halftime_no_change
-                logToGameSim("GM decides to stick with the current game plan for the second half.");
+        if (gameState.playerStrategies.defensive === "blitz_heavy") {
+            eaglesStrategyDefenceMod = 2;
+        } else if (gameState.playerStrategies.defensive === "bend_dont_break") {
+            eaglesStrategyDefenceMod = 0; // Changed from -1 to 0
+            logToGameSim("Bend Don't Break strategy active: Aim to prevent big plays, may concede shorter gains.");
+        } else if (gameState.playerStrategies.defensive === "shutdown_star") {
+            eaglesStrategyDefenceMod = 1; // Small general boost
+            if (gameState.jakeHarrisSkills.cricketersComposure) {
+                composureDefenceBoost = 1;
+                logToGameSim("Cricketer's Composure enhances Shutdown Star! +1 to Eagles Defence Modifier for this play.");
             }
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause after halftime decision
+        }
+
+        // --- Determine Opponent AI Strategy Dynamically ---
+        const opponentStrategies = getOpponentStrategy(eaglesScore, opponentScore, currentDown, yardsToGo, ballOnYardLine, currentPlayNumber, TOTAL_PLAYS_PER_GAME);
+        opponent.currentOffensiveStrategy = opponentStrategies.offensive;
+        opponent.currentDefensiveStrategy = opponentStrategies.defensive;
+        
+        if (attackerIsEagles) { // Eagles on Offense, Opponent on Defense
+            logToGameSim(`${opponent.opponentName} Defensive Strategy: ${opponent.currentDefensiveStrategy}`);
+            if (opponent.currentDefensiveStrategy === "blitz_heavy_defense") opponentStrategyDefenceMod = 2;
+            else if (opponent.currentDefensiveStrategy === "standard_defense") opponentStrategyDefenceMod = 0;
+            // Add other opponent defensive strategies here
+        } else { // Opponent on Offense, Eagles on Defense
+            logToGameSim(`${opponent.opponentName} Offensive Strategy: ${opponent.currentOffensiveStrategy}`);
+            if (opponent.currentOffensiveStrategy === "aggressive_pass") opponentStrategyOffenceMod = 2;
+            else if (opponent.currentOffensiveStrategy === "conservative_run") opponentStrategyOffenceMod = -1;
+            // Add other opponent offensive strategies here
         }
 
 
-        // Halftime possession flip and kickoff
-        if (q === 3 && playsThisQuarter === 0) { 
-            currentPossessionEagles = !currentPossessionEagles; 
-            driveActive = false; // New drive will start
+        if (attackerIsEagles) {
+            attackingTeamModifier = eaglesOffenceModifier + eaglesStrategyOffenceMod;
+            defendingTeamModifier = opponentDefenceModifier + opponentStrategyDefenceMod; // opponentStrategyDefenceMod is from AI
+            logToGameSim(`Eagles Offense (BaseMod: ${eaglesOffenceModifier}, StratMod: ${eaglesStrategyOffenceMod} = Total: ${attackingTeamModifier}) vs. ${opponent.opponentName} Defense (BaseMod: ${opponentDefenceModifier}, StratMod: ${opponentStrategyDefenceMod} = Total: ${defendingTeamModifier})`);
+        } else { // Opponent on Offense
+            attackingTeamModifier = opponentOffenceModifier + opponentStrategyOffenceMod; // opponentStrategyOffenceMod is from AI
+            defendingTeamModifier = eaglesDefenceModifier + eaglesStrategyDefenceMod + composureDefenceBoost; // Added composureDefenceBoost
+            logToGameSim(`${opponent.opponentName} Offense (BaseMod: ${opponentOffenceModifier}, StratMod: ${opponentStrategyOffenceMod} = Total: ${attackingTeamModifier}) vs. Eagles Defense (BaseMod: ${eaglesDefenceModifier}, StratMod: ${eaglesStrategyDefenceMod}, ComposureBoost: ${composureDefenceBoost} = Total: ${defendingTeamModifier})`);
+        }
+
+        const attackRoll = Math.floor(Math.random() * 20) + 1;
+        const defenceRoll = Math.floor(Math.random() * 20) + 1;
+
+        // --- Apply Key Player Impact Modifier (Refined) ---
+        if (attackerIsEagles) { // Eagles on Offense
+            const keyOffensivePlayer = selectKeyPlayer(eaglesRoster, 'Eagles', true);
+            if (keyOffensivePlayer) {
+                let impact = 0;
+                const baseSkill = keyOffensivePlayer.skills.offence || 50;
+                if (baseSkill > 75) { // Threshold for impact
+                    impact = Math.max(0, Math.min(3, Math.round((baseSkill - 70) / 10)));
+                }
+                // Morale Modifier for impact
+                if (keyOffensivePlayer.morale > 80) impact += 1;
+                else if (keyOffensivePlayer.morale < 40) impact -= 1;
+                
+                // realStatsSummary check for additional impact boost
+                if (keyOffensivePlayer.realStatsSummary && (keyOffensivePlayer.realStatsSummary.toLowerCase().includes("mvp") || keyOffensivePlayer.realStatsSummary.toLowerCase().includes("all-pro"))) {
+                    impact +=1; // Small boost for highly acclaimed players
+                }
+                impact = Math.max(0, Math.min(4, impact)); // Clamp final impact, allow slightly higher max with all boosts
+
+                if (impact > 0) {
+                    // "Hero Ball" trait integration for Eagles offensive player
+                    if (keyOffensivePlayer.uniqueTraitName === "Hero Ball" && Math.random() < 0.15) { // 15% chance for Hero Ball to activate
+                        const heroBoost = Math.random() < 0.7 ? 1 : 2; // +1 or +2 extra
+                        impact += heroBoost;
+                        impact = Math.min(5, impact); // Cap total impact from hero ball slightly higher
+                        logToGameSim(`HERO BALL! ${keyOffensivePlayer.name} makes a spectacular play! Impact further boosted by +${heroBoost}.`);
+                    }
+                    attackingTeamModifier += impact;
+                    logToGameSim(`Eagles Key Player (Offense): ${keyOffensivePlayer.name} (Morale: ${keyOffensivePlayer.morale}, Stats: ${keyOffensivePlayer.realStatsSummary || 'N/A'}) adds +${impact} offensive impact!`);
+                }
+            }
+        } else { // Opponent on Offense
+            const keyOppOffensivePlayer = selectKeyPlayer(opponentRoster, 'Opponent', true);
+            if (keyOppOffensivePlayer) {
+                let impact = 0;
+                const baseSkill = keyOppOffensivePlayer.skills.offence || 50;
+                if (baseSkill > 75) {
+                     impact = Math.max(0, Math.min(3, Math.round((baseSkill - 70) / 10)));
+                }
+                if (keyOppOffensivePlayer.morale > 80) impact += 1;
+                else if (keyOppOffensivePlayer.morale < 40) impact -=1;
+
+                if (keyOppOffensivePlayer.realStatsSummary && (keyOppOffensivePlayer.realStatsSummary.toLowerCase().includes("mvp") || keyOppOffensivePlayer.realStatsSummary.toLowerCase().includes("all-pro"))) {
+                    impact +=1;
+                }
+                impact = Math.max(0, Math.min(4, impact));
+
+                if (impact > 0) {
+                    attackingTeamModifier += impact; // Opponent's attack gets stronger
+                    logToGameSim(`Opponent Key Player (Offense): ${keyOppOffensivePlayer.name} (Morale: ${keyOppOffensivePlayer.morale}, Stats: ${keyOppOffensivePlayer.realStatsSummary || 'N/A'}) adds +${impact} offensive impact!`);
+                }
+            }
+        }
+
+        // Defensive Key Player Impact
+        if (!attackerIsEagles) { // Eagles on Defense
+            const keyDefensivePlayer = selectKeyPlayer(eaglesRoster, 'Eagles', false);
+            if (keyDefensivePlayer) {
+                let impact = 0;
+                const baseSkill = keyDefensivePlayer.skills.defence || 50;
+                 if (baseSkill > 75) {
+                    impact = Math.max(0, Math.min(3, Math.round((baseSkill - 70) / 10)));
+                }
+                if (keyDefensivePlayer.morale > 80) impact += 1;
+                else if (keyDefensivePlayer.morale < 40) impact -=1;
+
+                if (keyDefensivePlayer.realStatsSummary && (keyDefensivePlayer.realStatsSummary.toLowerCase().includes("all-pro") || keyDefensivePlayer.realStatsSummary.toLowerCase().includes("top defender"))) {
+                    impact +=1;
+                }
+                impact = Math.max(0, Math.min(4, impact));
+                
+                if (impact > 0) {
+                    defendingTeamModifier += impact; // Eagles' defense gets stronger
+                    logToGameSim(`Eagles Key Player (Defense): ${keyDefensivePlayer.name} (Morale: ${keyDefensivePlayer.morale}, Stats: ${keyDefensivePlayer.realStatsSummary || 'N/A'}) adds +${impact} defensive impact!`);
+                }
+            }
+        } else { // Opponent on Defense
+            const keyOppDefensivePlayer = selectKeyPlayer(opponentRoster, 'Opponent', false);
+             if (keyOppDefensivePlayer) {
+                let impact = 0;
+                const baseSkill = keyOppDefensivePlayer.skills.defence || 50;
+                if (baseSkill > 75) {
+                    impact = Math.max(0, Math.min(3, Math.round((baseSkill - 70) / 10)));
+                }
+                if (keyOppDefensivePlayer.morale > 80) impact += 1;
+                else if (keyOppDefensivePlayer.morale < 40) impact -=1;
+                
+                if (keyOppDefensivePlayer.realStatsSummary && (keyOppDefensivePlayer.realStatsSummary.toLowerCase().includes("all-pro") || keyOppDefensivePlayer.realStatsSummary.toLowerCase().includes("top defender"))) {
+                    impact +=1;
+                }
+                impact = Math.max(0, Math.min(4, impact));
+
+                if (impact > 0) {
+                    defendingTeamModifier += impact; // Opponent's defense gets stronger
+                    logToGameSim(`Opponent Key Player (Defense): ${keyOppDefensivePlayer.name} (Morale: ${keyOppDefensivePlayer.morale}, Stats: ${keyOppDefensivePlayer.realStatsSummary || 'N/A'}) adds +${impact} defensive impact!`);
+                }
+            }
+        }
+
+        const attackScore = attackRoll + attackingTeamModifier;
+        const defenceScore = defenceRoll + defendingTeamModifier;
+        let playAdvantage = attackScore - defenceScore; // Make playAdvantage mutable for strategy adjustments
+
+        // Cricketer's Composure: Offensive PlayAdvantage modification in critical moments
+        if (attackerIsEagles && gameState.jakeHarrisSkills.cricketersComposure) {
+            const isLateGameCritical = currentPlayNumber > TOTAL_PLAYS_PER_GAME * 0.75;
+            const isScoreCloseCritical = Math.abs(eaglesScore - opponentScore) <= 7;
+            const isDownCritical = currentDown >= 3;
+
+            if (isLateGameCritical && isScoreCloseCritical && isDownCritical) {
+                if (Math.random() < 0.25) { // 25% chance to trigger composure effect
+                    let composureEffect = 0;
+                    if (playAdvantage >= -3 && playAdvantage <= 3) { // If play was marginal
+                        composureEffect = Math.floor(Math.random() * 2) + 2; // +2 or +3
+                        playAdvantage += composureEffect;
+                        logToGameSim(`CRICKETER'S COMPOSURE! Eagles gain +${composureEffect} Play Advantage in a critical moment! New PA: ${playAdvantage}`);
+                    } else if (playAdvantage < -7) { // If play was very bad
+                        composureEffect = Math.floor(Math.random() * 2) + 1; // Mitigate by +1 or +2
+                        playAdvantage += composureEffect;
+                        logToGameSim(`CRICKETER'S COMPOSURE! Eagles mitigate a bad play by +${composureEffect} Play Advantage in a critical moment! New PA: ${playAdvantage}`);
+                    }
+                }
+            }
+        }
+
+        // Apply "conservative_run" outcome modifications (Eagles on Offense)
+        if (attackerIsEagles && gameState.playerStrategies.offensive === "conservative_run") {
+            if (playAdvantage >= 12) { // Was a "Breakthrough Play!"
+                playAdvantage = 11; // Cap at top of "Solid Gain"
+                logToGameSim("Conservative Run: Capped potential breakthrough to a solid gain.");
+            }
+            if (playAdvantage <= -12) { // Was a "Disaster for Offence"
+                playAdvantage = -11; // Mitigate to "Major Defensive Win"
+                logToGameSim("Conservative Run: Mitigated potential disaster to a major defensive win.");
+            }
+        }
+
+        // Apply "bend_dont_break" outcome modifications (Eagles on Defense)
+        if (!attackerIsEagles && gameState.playerStrategies.defensive === "bend_dont_break") {
+            if (playAdvantage >= 12) { // Opponent was heading for a "Breakthrough Play!"
+                playAdvantage = 11; // Cap at top of "Solid Gain" for opponent
+                logToGameSim("Bend Don't Break: Prevented opponent breakthrough, capped to solid gain.");
+            } else if (playAdvantage >= 1 && playAdvantage <= 3) { // Opponent had "Minimal Gain"
+                // Slightly increase chance of it becoming a "Positive Gain"
+                if (Math.random() < 0.33) { // 33% chance to nudge up
+                    playAdvantage = Math.min(7, playAdvantage + 3); // Nudge towards/into Positive Gain category
+                    logToGameSim("Bend Don't Break: Opponent's minimal gain potentially becomes a positive gain.");
+                }
+            }
+        }
+
+        logToGameSim(`Attack Roll: ${attackRoll} + Mod ${attackingTeamModifier} = ${attackScore}. Defence Roll: ${defenceRoll} + Mod ${defendingTeamModifier} = ${defenceScore}. Final Play Advantage: ${playAdvantage}`);
+
+        const outcome = getPlayOutcomeFromAdvantage(playAdvantage);
+        let yardageGained = outcome.yardage;
+        let playDescription = outcome.category;
+        let turnover = false;
+        let scoreEvent = null; // 'TD', 'FG_GOOD', 'SAFETY'
+
+        // Refine "blitz_heavy" strategy: Amplify opponent's gain if blitz fails badly
+        if (!attackerIsEagles && gameState.playerStrategies.defensive === "blitz_heavy") { // Eagles on defense with blitz
+            if (playAdvantage > 7) { // Opponent won the roll significantly (e.g., PlayAdvantage for Opponent is high)
+                const blitzBackfireBonus = Math.floor(Math.random() * 6) + 5; // Opponent gets extra 5-10 yards
+                yardageGained += blitzBackfireBonus;
+                playDescription += ` (Blitz Backfire! +${blitzBackfireBonus} yds)`;
+                logToGameSim(`Blitz Heavy strategy backfires! Opponent gains an extra ${blitzBackfireBonus} yards.`);
+            }
+        }
+        // Note: If opponent is blitzing, a similar logic could be added if attackerIsEagles and opponent.currentStrategy includes a blitz.
+
+        // Apply yardage
+        if (attackerIsEagles) {
+            ballOnYardLine += yardageGained;
+        } else {
+            ballOnYardLine -= yardageGained; // Yardage is from offensive perspective
         }
         
-        let gameEndedEarly = false;
+        logToGameSim(`${attackerIsEagles ? "Eagles" : opponent.opponentName} play: ${playDescription}. Yards: ${yardageGained}.`);
 
-        while (playsThisQuarter < MAX_PLAYS_PER_QUARTER && !gameEndedEarly) {
-            let playResultForAnim = "Play"; 
-            let playTypeForAnim = "Offensive Play"; 
-            let detailedPlayTypeForAnim = "Offensive Play";
+        // Safety Check
+        let safetyOccurred = false;
+        if (attackerIsEagles && ballOnYardLine <= 0) {
+            logToGameSim("SAFETY! Eagles tackled in their own endzone.", true);
+            playAudio('sfx_safety');
+            opponentScore += 2;
+            scoreEvent = 'SAFETY_OPPONENT';
+            safetyOccurred = true;
+            currentPossessionEagles = false; // Opponent gets ball
+            ballOnYardLine = 75; // Opponent starts at their 25 (Eagles' 75) after free kick
+            currentDown = 1; yardsToGo = 10;
+        } else if (!attackerIsEagles && ballOnYardLine >= 100) {
+            logToGameSim(`SAFETY! ${opponent.opponentName} tackled in their own endzone.`, true);
+            playAudio('sfx_safety');
+            eaglesScore += 2;
+            scoreEvent = 'SAFETY_EAGLES';
+            safetyOccurred = true;
+            currentPossessionEagles = true; // Eagles get ball
+            ballOnYardLine = 25; // Eagles start at their 25 after free kick
+            currentDown = 1; yardsToGo = 10;
+        }
 
-            if (!driveActive) {
+        // Touchdown Check (only if no safety)
+        if (!safetyOccurred && attackerIsEagles && ballOnYardLine >= 100) {
+            logToGameSim("TOUCHDOWN EAGLES!", true);
+            eaglesScore += 6;
+            scoreEvent = 'TD_EAGLES';
+            // PAT Attempt
+            const patResultEagles = await getPATDecisionAndOutcome(true, eaglesScore, opponentScore);
+            eaglesScore += patResultEagles.points;
+            // End PAT
+            currentPossessionEagles = false; // Opponent gets ball
+            ballOnYardLine = 75; // Kickoff to opponent's 25
+            currentDown = 1; yardsToGo = 10;
+            window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+            window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+        } else if (!safetyOccurred && !attackerIsEagles && ballOnYardLine <= 0) {
+            logToGameSim(`TOUCHDOWN ${opponent.opponentName}!`, true);
+            opponentScore += 6;
+            scoreEvent = 'TD_OPPONENT';
+            // PAT Attempt
+            const patResultOpponent = await getPATDecisionAndOutcome(false, eaglesScore, opponentScore);
+            opponentScore += patResultOpponent.points;
+            // End PAT
+            currentPossessionEagles = true; // Eagles get ball
+            ballOnYardLine = 25; // Kickoff to Eagles' 25
+            currentDown = 1; yardsToGo = 10;
+            window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+            window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+        } else {
+            // No TD, continue down logic
+            yardsToGo -= yardageGained;
+            if (yardsToGo <= 0) {
+                logToGameSim("First Down!");
+                if (!firstDownSoundPlayedThisQuarter) {
+                    playAudio('sfx_first_down');
+                    firstDownSoundPlayedThisQuarter = true;
+                }
                 currentDown = 1;
                 yardsToGo = 10;
-                // Simplified starting field position: 25-yard line after kickoff/score.
-                // This will be refined later for punts/turnovers.
-                ballOnYardLine = currentPossessionEagles ? 25 : 75; // Eagles' 25 or Opponent's 25 (from Eagles' perspective)
-                driveActive = true;
-                
-                if (window.gameVisualizer && window.gameVisualizer.ctx) {
-                    window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent'); // Ensure possession is set for new drive
-                    window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                }
-                // Determine yard line string based on whose perspective
-                let yardLineStr;
-                if (currentPossessionEagles) { // Eagles have the ball
-                    yardLineStr = ballOnYardLine <= 50 ? `their own ${ballOnYardLine}` : `the opponent's ${100 - ballOnYardLine}`;
-                } else { // Opponent has the ball
-                    yardLineStr = ballOnYardLine >= 50 ? `their own ${100 - ballOnYardLine}` : `the Eagles' ${ballOnYardLine}`;
-                }
-                logToGameSim(`${currentPossessionEagles ? "Eagles" : opponent.opponentName} start drive at ${yardLineStr} yard line. ${window.gameVisualizer.getOrdinal(currentDown)} & ${yardsToGo}.`);
             } else {
-                 // Update visualizer for ongoing drive if needed (already done by animatePlay's redraws)
-                 if (window.gameVisualizer && window.gameVisualizer.ctx) {
-                    window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                 }
+                currentDown++;
             }
+        }
+        
+        // Turnover on Downs
+        if (currentDown > 4 && !scoreEvent) { // Don't flip possession if a TD just happened on 4th
+            logToGameSim(`Turnover on downs! ${currentPossessionEagles ? opponent.opponentName : "Eagles"} ball.`);
+            currentPossessionEagles = !currentPossessionEagles;
+            ballOnYardLine = 100 - ballOnYardLine; // Flip field position
+            currentDown = 1;
+            yardsToGo = 10;
+            turnover = true; // To signify end of possession for animation/visualizer
+            window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+            window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+        }
+
+        // --- Refined Turnover Check with d100 and BallSecurityModifier ---
+        let baseTurnoverChance = 0;
+        if (outcome.event === "TURNOVER_RISK_VERY_HIGH") {
+            baseTurnoverChance = 25; // Reduced base risk slightly
+        } else if (outcome.event === "TURNOVER_RISK_INCREASED") {
+            baseTurnoverChance = 10; // Reduced base risk slightly
+        }
+
+        if (baseTurnoverChance > 0) {
+            let finalTurnoverChance = baseTurnoverChance;
+
+            // 1. PlayAdvantage Effect (Offensive perspective: negative advantage increases chance)
+            // If playAdvantage is -12 (Disaster), adds 24% chance. If -8 (Major Def Win), adds 16%.
+            const playAdvantageEffect = Math.max(0, -playAdvantage * 2); 
+            finalTurnoverChance += playAdvantageEffect;
+
+            // 2. Strategy & BallSecurityModifier Effect (for Eagles only currently)
+            let ballSecurityModifierValue = 0; // Higher is better for offense (reduces chance)
+            let offensiveStrategyFactor = 0; // Positive increases chance, negative decreases
+
+            if (attackerIsEagles) {
+                if (gameState.playerStrategies.offensive === "aggressive_pass") {
+                    offensiveStrategyFactor = 20; // Aggressive pass adds 20% to turnover chance (more risky)
+                    logToGameSim("Aggressive Pass strategy: +20% turnover chance.");
+                } else if (gameState.playerStrategies.offensive === "conservative_run") {
+                    ballSecurityModifierValue = 20; // Conservative run provides +20 ball security (reduces chance)
+                    logToGameSim("Conservative Run strategy: Ball Security +20 (reduces turnover chance).");
+                }
+            }
+            // TODO: Implement for Opponent AI strategies if they have similar risk profiles
+
+            finalTurnoverChance += offensiveStrategyFactor;
+            finalTurnoverChance -= ballSecurityModifierValue;
+
+            // 3. Defensive Player Trait Effect (e.g., "Ball Hawk")
+            let defensiveTraitFactor = 0;
+            if (!attackerIsEagles) { // Eagles are on defense
+                const keyDefender = selectKeyPlayer(eaglesRoster, 'Eagles', false); // See if a key defender is making an impact
+                if (keyDefender && keyDefender.uniqueTraitName === "Ball Hawk") {
+                    defensiveTraitFactor = 15; // "Ball Hawk" adds 15% to turnover chance (more impactful)
+                    logToGameSim(`Eagles Defensive Trait: ${keyDefender.name} (Ball Hawk) active! +15% turnover chance.`);
+                }
+            } else { // Opponent is on defense
+                const keyOpponentDefender = selectKeyPlayer(opponentRoster, 'Opponent', false);
+                if (keyOpponentDefender && keyOpponentDefender.uniqueTraitName === "Ball Hawk") { // Assuming opponents can have traits
+                    defensiveTraitFactor = 15; // "Ball Hawk" adds 15% to turnover chance (more impactful)
+                    logToGameSim(`Opponent Defensive Trait: ${keyOpponentDefender.name} (Ball Hawk) active! +15% turnover chance.`);
+                }
+            }
+            finalTurnoverChance += defensiveTraitFactor;
+
+
+            // Clamp final chance (e.g., 5% to 80% to allow for strong trait effects)
+            finalTurnoverChance = Math.max(5, Math.min(80, finalTurnoverChance));
             
-            console.log(`simulateGameInstance: Simulating play ${playsThisQuarter + 1} in Q${q}, Down: ${currentDown}, YardsToGo: ${yardsToGo}, BallOn: ${ballOnYardLine} (Eagles perspective)`);
-            await new Promise(resolve => setTimeout(resolve, 600)); 
+            logToGameSim(`Turnover Check: Base ${baseTurnoverChance}% + PA_Effect ${playAdvantageEffect}% + StratFactor ${offensiveStrategyFactor}% - BallSec ${ballSecurityModifierValue}% + DefTrait ${defensiveTraitFactor}% = Final ${finalTurnoverChance}%`);
 
-            let tempOffStrengthMod = 0;
-            let tempDefStrengthMod = 0;
-            specificYardBonus = 0; 
+            const turnoverRoll = Math.floor(Math.random() * 100) + 1; // d100 roll
+            if (turnoverRoll <= finalTurnoverChance) {
+                logToGameSim(`TURNOVER! (Rolled ${turnoverRoll} vs. Chance ${finalTurnoverChance}%)`, true);
+                currentPossessionEagles = !currentPossessionEagles;
+                ballOnYardLine = 100 - ballOnYardLine; // Flip field position
+                // TODO: Add small random yardage for return later, or determine fumble/interception spot
+                currentDown = 1; yardsToGo = 10;
+                turnover = true;
+                window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+                window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+                
+                let turnoverType = "FUMBLE"; // Default
+                let offensivePlayStyle = "balanced"; // Default
 
-            const playersOnDrive = gameState.eaglesRoster.sort(() => Math.random() - 0.5).slice(0, Math.min(totalPlayers, 3));
+                if (attackerIsEagles) {
+                    offensivePlayStyle = gameState.playerStrategies.offensive || "balanced";
+                } else {
+                    offensivePlayStyle = opponent.currentOffensiveStrategy || "balanced_offence";
+                }
 
-            if (currentPossessionEagles) {
-                logToGameSim("Eagles possession...");
-                gameState.unansweredOpponentPoints = 0; // Eagles have the ball, so reset opponent's unanswered streak
-
-                // --- New Momentum Swing Decision Point ---
-                if (gameState.unansweredOpponentPoints >= 10 && q < 4 && eaglesTimeoutsLeft > 0 && Math.random() < 0.33) { // 33% chance if conditions met
-                    const momentumDecisionContext = {
-                        text: `The opponent has scored ${gameState.unansweredOpponentPoints} unanswered points! The momentum is shifting. How do you respond, GM?`,
-                        choices: [
-                            { text: "Call a timeout, rally the troops. (Cost: 1 Timeout)", action: "momentum_rally_timeout" },
-                            { text: "Stick to the game plan, trust the process.", action: "momentum_stick_plan" },
-                            { text: "Make a bold offensive shift (e.g., Hurry-up).", action: "momentum_bold_shift_offense" },
-                            { text: "Make a bold defensive shift (e.g., Aggressive Prevent).", action: "momentum_bold_shift_defense" }
-                        ]
-                    };
-                    const userMomentumChoice = await new Promise(resolveUserChoice => {
-                        renderDecisionPointUI(momentumDecisionContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-                    });
-                    logToGameSim(`GM Momentum Call: ${userMomentumChoice}`);
-                    if (userMomentumChoice === "momentum_rally_timeout") {
-                        if (eaglesTimeoutsLeft > 0) {
-                            eaglesTimeoutsLeft--;
-                            tempOffStrengthMod += 4; tempDefStrengthMod += 4; // Temp boost for next drive (applies if possession flips back or for current D)
-                            gameState.eaglesRoster.forEach(p => p.morale = Math.min(100, p.morale + 3));
-                            logToGameSim("Timeout called! Team morale boosted. Offensive and Defensive focus sharpened for the next series.");
-                            if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        } else {
-                            logToGameSim("Tried to call timeout, but none left!");
-                        }
-                    } else if (userMomentumChoice === "momentum_stick_plan") {
-                        if (Math.random() < 0.5) {
-                            gameState.eaglesRoster.forEach(p => {
-                                if (p.philosophy === "Traditionalist" || p.philosophy === "Neutral") p.loyalty = Math.min(100, p.loyalty + 2);
-                            });
-                            logToGameSim("The team trusts the process. Some players appreciate the calm leadership.");
-                        } else {
-                            gameState.eaglesRoster.forEach(p => {
-                                if (p.philosophy === "Individualist" || p.philosophy === "Egalitarian") p.morale = Math.max(0, p.morale - 3);
-                            });
-                            logToGameSim("Players seem frustrated by the lack of adjustment. Morale dips for some.");
-                        }
-                    } else if (userMomentumChoice === "momentum_bold_shift_offense") {
-                        gameState.temporaryGameModifiers.offence += 6; // Lasts for this drive
-                        interceptionRiskModifier *= 1.4; 
-                        fumbleRiskModifier *= 1.2;
-                        gameState.gmReputation.progTrad = Math.max(0, gameState.gmReputation.progTrad - 3);
-                        logToGameSim("GM signals a bold offensive shift to a fast-paced attack! Higher risk, potential for quick scores.");
-                    } else if (userMomentumChoice === "momentum_bold_shift_defense") {
-                        // This decision makes more sense if it's *before* an opponent's drive,
-                        // but for now, we'll apply it as a general defensive posture change for the Eagles.
-                        gameState.temporaryGameModifiers.defence += 6; // Lasts for next opponent drive
-                        // opponentYardVarianceMultiplier *= 0.8; // This variable doesn't exist, conceptual
-                        gameState.gmReputation.progTrad = Math.max(0, gameState.gmReputation.progTrad + 2);
-                        logToGameSim("GM signals a bold defensive shift to prevent big plays! This will apply on the next defensive series.");
-                    }
-                    // Reset for this decision point, so it doesn't trigger again immediately unless opponent scores more
-                    // gameState.unansweredOpponentPoints = 0; // Or perhaps reduce it, not fully reset? For now, let's not reset here.
+                if (offensivePlayStyle.includes("pass")) { // e.g., "aggressive_pass"
+                    turnoverType = Math.random() < 0.75 ? "INTERCEPTION" : "FUMBLE"; // 75% chance Interception on pass plays
+                    logToGameSim(`Pass-heavy play style (${offensivePlayStyle}) - turnover weighted towards Interception.`);
+                } else if (offensivePlayStyle.includes("run")) { // e.g., "conservative_run"
+                    turnoverType = Math.random() < 0.70 ? "FUMBLE" : "INTERCEPTION"; // 70% chance Fumble on run plays
+                    logToGameSim(`Run-heavy play style (${offensivePlayStyle}) - turnover weighted towards Fumble.`);
+                } else { // Balanced or other
+                    turnoverType = Math.random() < 0.6 ? "FUMBLE" : "INTERCEPTION"; // Slightly more fumbles generally
                 }
                 
-                // --- Potentially Trigger "Challenge Referee Call" Decision Point ---
-                // This should ideally be after a play result is determined but before the next play starts.
-                // For simplicity, let's check after the main decision points but before calculating effective strength for the current play.
-                // This means a challenge would apply to the *previous* play's outcome, which is complex to model perfectly here.
-                // We'll simulate it as a chance to gain an advantage *before* the current play.
+                logToGameSim(`Turnover type: ${turnoverType}`);
+                playDescription += ` (${turnoverType})`; // Add to play description for visualizer
+            } else {
+                logToGameSim(`No turnover (Rolled ${turnoverRoll} vs. Chance ${finalTurnoverChance}%)`);
+            }
+        }
+        // --- End Refined Turnover Check ---
 
-                let challengeablePlayOccurredThisDrive = false; // Flag to see if a challengeable situation happened in this drive segment.
-                                                              // This is a simplification. Ideally, it's per-play.
+        let fourthDownDecisionAction = null; 
 
-                // Placeholder: Assume some plays might be challengeable (e.g., after a turnover, or a close 4th down stop)
-                // We'll set this flag true randomly for now if it's not a scoring play or obvious end of possession.
-                // Use previous play's outcome for challenge decision
-                if (previousDetailedPlayTypeOutcome && !previousDetailedPlayTypeOutcome.includes("TD") && !previousDetailedPlayTypeOutcome.includes("FG") && currentDown > 1 && Math.random() < 0.2) {
-                    challengeablePlayOccurredThisDrive = true;
-                }
+        // --- 4th Down Decision Logic ---
+        if (currentDown === 4 && !scoreEvent && !turnover) { 
+            fourthDownDecisionAction = getFourthDownDecision(
+                ballOnYardLine, 
+                yardsToGo, 
+                currentPlayNumber, 
+                TOTAL_PLAYS_PER_GAME, 
+                attackerIsEagles ? eaglesScore : opponentScore, 
+                attackerIsEagles ? opponentScore : eaglesScore, 
+                attackerIsEagles
+            );
 
-                if (challengeablePlayOccurredThisDrive && gameState.eaglesChallengesLeft > 0 && Math.random() < 0.20) { // 20% chance if conditions met
-                    const challengeDecisionContext = {
-                        text: `A controversial call was made on the previous play (${previousDetailedPlayTypeOutcome || 'Unknown Play'})! Do you want to challenge the ruling on the field? (Challenges left: ${gameState.eaglesChallengesLeft})`,
-                        choices: [
-                            { text: "Throw the Challenge Flag!", action: "challenge_call" },
-                            { text: "Accept the call, save the challenge.", action: "accept_call" }
-                        ]
-                    };
-                    const userChallengeChoice = await new Promise(resolveUserChoice => {
-                        renderDecisionPointUI(challengeDecisionContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-                    });
-                    logToGameSim(`GM Challenge Decision: ${userChallengeChoice}`);
-
-                    if (userChallengeChoice === "challenge_call") {
-                        gameState.eaglesChallengesLeft--;
-                        logToGameSim("Eagles are challenging the call on the field!");
-                        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate review time
-
-                        let challengeSuccessRate = 0.40; // Base 40% success
-                        if (gameState.jakeHarrisSkills.designersInsight) {
-                            challengeSuccessRate += 0.10; // Designer's Insight helps spot good challenges
-                            logToGameSim("Designer's Insight gives a better read on the challenge!");
-                        }
-
-                        if (Math.random() < challengeSuccessRate) {
-                            logToGameSim("CHALLENGE SUCCESSFUL! The ruling is overturned in favor of the Eagles!", true);
-                            // Simulate a positive outcome - e.g., gain yards, first down, or reverse a turnover
-                            // This is a simplification. True reversal is complex.
-                            if (Math.random() < 0.5 && !currentPossessionEagles) { // If opponent had ball, simulate turnover reversal
-                                logToGameSim("The previous turnover is reversed! Eagles ball!");
-                                currentPossessionEagles = true;
-                                ballOnYardLine = Math.min(95, ballOnYardLine + 10); // Favorable spot
-                                currentDown = 1; yardsToGo = 10;
-                            } else { // Simulate a favorable spot or first down
-                                logToGameSim("The play is overturned, resulting in a first down for the Eagles!");
-                                ballOnYardLine = Math.min(95, ballOnYardLine + Math.floor(Math.random() * 10) + 5);
-                                currentDown = 1; yardsToGo = 10;
-                            }
-                        } else {
-                            logToGameSim("CHALLENGE UNSUCCESSFUL. The ruling on the field stands. Eagles lose a timeout.", true);
-                            if (eaglesTimeoutsLeft > 0) {
-                                eaglesTimeoutsLeft--;
-                                if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                            } else {
-                                logToGameSim("No timeouts left to lose from the failed challenge.");
-                            }
-                        }
-                    } else { // accept_call
-                        logToGameSim("GM decides not to challenge the call.");
-                    }
-                }
-
-
-                // Decision Point (existing logic)
-                // Red Zone Decision Point
-                if (currentPossessionEagles && ballOnYardLine >= 80 && ballOnYardLine < 100 && Math.random() < 0.25) { // Eagles in Red Zone (opponent's 1 to 20 yard line)
-                    const decisionContext = {
-                        text: `Red Zone Opportunity! Ball on the opponent's ${100 - ballOnYardLine}-yard line. What's the call to punch it in?`,
-                        choices: [
-                            { text: "Power Run - try to muscle it in.", action: "redzone_power_run" },
-                            { text: "Safe Pass - look for an open receiver.", action: "redzone_safe_pass" },
-                            { text: "Play Action / Trick Play - catch them off guard!", action: "redzone_trick_play", meta: { requiresComposure: true } }
-                        ]
-                    };
-                    console.log(`simulateGameInstance: Entering Red Zone decision point in Q${q}`);
-                    const userChoice = await new Promise(resolveUserChoice => {
-                        renderDecisionPointUI(decisionContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-                    });
-                    console.log(`simulateGameInstance: Red Zone decision resolved with choice: ${userChoice}`);
-                    logToGameSim(`GM Red Zone Call: ${userChoice}`);
-                    if (userChoice === "redzone_power_run") tempOffStrengthMod += 5; // Increased from +4
-                    else if (userChoice === "redzone_safe_pass") tempOffStrengthMod += 3; // Increased from +2
-                    else if (userChoice === "redzone_trick_play") {
-                        if (gameState.jakeHarrisSkills.cricketersComposure) {
-                            logToGameSim("Cricketer's Composure helps execute the trick play!");
-                            tempOffStrengthMod += 9; // Increased from +7
-                            yardVarianceMultiplier *= 1.3; // Increased from 1.2
-                        } else {
-                            logToGameSim("Trick play without full composure... very risky!");
-                            tempOffStrengthMod += 2; // Decreased from +3
-                            interceptionRiskModifier *= 1.5; // Increased from 1.3
-                            fumbleRiskModifier *= 1.2; // Added fumble risk
-                        }
-                    }
-                } else if (Math.random() < 0.20 && q >= 2 && (eaglesScore < opponentScore || Math.abs(eaglesScore - opponentScore) <= 7) ) { // Existing decision point
-                    const decisionContext = {
-                        text: `Key moment! It's ${Math.random() < 0.5 ? '3rd' : '4th'} and ${Math.floor(Math.random()*6)+2} yards to go. The game is close. What's the call, GM?`,
-                        choices: [
-                            { text: "Conservative play (run/short pass).", action: "conservative_play" },
-                            { text: "Go for it aggressively!", action: "aggressive_play" },
-                            { text: "Rely on a star player's instinct.", action: "star_instinct", meta: { requiresComposure: true } }
-                        ]
-                    };
-                    console.log(`simulateGameInstance: Entering decision point in Q${q}`);
-                    const userChoice = await new Promise(resolveUserChoice => {
-                        renderDecisionPointUI(decisionContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-                    });
-                    console.log(`simulateGameInstance: Decision point resolved with choice: ${userChoice}`);
-                    logToGameSim(`GM Call: ${userChoice}`);
-                    if (userChoice === "aggressive_play") {
-                        tempOffStrengthMod += 10; // Increased from +8
-                        interceptionRiskModifier *= 1.1; 
-                        fumbleRiskModifier *= 1.1;
-                        logToGameSim("GM goes for it aggressively! Higher risk, higher reward.");
-                    } else if (userChoice === "conservative_play") {
-                        tempOffStrengthMod -= 3; // Changed from -5
-                        logToGameSim("GM plays it safe with a conservative call.");
-                    } else if (userChoice === "star_instinct") {
-                        if (gameState.jakeHarrisSkills.cricketersComposure) {
-                            logToGameSim("Cricketer's Composure helps the star player execute!");
-                            tempOffStrengthMod += 12; // Increased from +10
-                        } else {
-                            logToGameSim("Star player tries, but it's a gamble without full composure!");
-                            tempOffStrengthMod += 3; // Increased from +1
-                            interceptionRiskModifier *= 1.2;
-                            fumbleRiskModifier *= 1.15;
-                        }
-                    }
-                }
-
-                    let effectiveEaglesOffStrength = currentDriveEaglesOffStrength + tempOffStrengthMod;
-
-                    // Apply individual player traits, stats, morale/loyalty impact
-                    playersOnDrive.forEach(player => {
-                        // Individual Stat-based "Momentum/Focus" for this play
-                        let individualPlayBoost = 0;
-                        if (player.skills.offence > 80 && Math.random() < 0.1) individualPlayBoost += (player.skills.offence - 80) / 5; // Max +4 for 100 skill
-                        else if (player.skills.offence < 50 && Math.random() < 0.05) individualPlayBoost -= (50 - player.skills.offence) / 10; // Max -3 for 20 skill
-                        effectiveEaglesOffStrength += individualPlayBoost;
-                        if (individualPlayBoost > 0) logToGameSim(`✨ ${player.name} feeling sharp, gets a +${individualPlayBoost.toFixed(1)} boost this play!`);
-                        if (individualPlayBoost < 0) logToGameSim(`⚠️ ${player.name} a bit off, takes a ${individualPlayBoost.toFixed(1)} hit this play.`);
-
-                        const philosophyTemplate = PLAYER_PHILOSOPHY_TEMPLATES[player.philosophy];
-                        if (!philosophyTemplate) return; // Should not happen
-
-                        // Trait effects
-                        if (player.uniqueTraitName === "Hero Ball" && Math.random() < 0.20) { 
-                             logToGameSim(`⚡ ${player.name} (${philosophyTemplate.name}) with some 'Hero Ball'!`);
-                             effectiveEaglesOffStrength += 12; // Increased from +10
-                        } else if (player.uniqueTraitName === "Unit Cohesion" && Math.random() < 0.18) { 
-                             logToGameSim(`🤝 'Unit Cohesion' from ${player.name} (${philosophyTemplate.name}) bolsters the drive!`);
-                             effectiveEaglesOffStrength += 8; // Increased from +7
-                             currentDriveEaglesDefStrength += 3; // Increased from +2
-                        }
-                        // Add Traditionalist trait effect if applicable to offense (less likely)
-
-                        // Morale/Loyalty Impact
-                        const moraleLoyaltyAvg = (player.morale + player.loyalty) / 2;
-                        if (moraleLoyaltyAvg < 35 && Math.random() < 0.08) { // Lowered threshold, increased chance
-                             const impact = Math.floor(Math.random() * 6) + 4; // Increased impact: 4-9
-                             effectiveEaglesOffStrength = Math.max(10, effectiveEaglesOffStrength - impact);
-                             logToGameSim(`🔻🔻 ${player.name} (${player.philosophy}) critically struggling (${Math.round(player.morale)} morale, ${player.loyalty} loyalty) - Major offensive mistake! (-${impact} strength)`);
-                        } else if (moraleLoyaltyAvg > 80 && Math.random() < 0.07) { // Increased threshold, increased chance
-                             const impact = Math.floor(Math.random() * 6) + 4; // Increased impact: 4-9
-                             effectiveEaglesOffStrength = Math.min(115, effectiveEaglesOffStrength + impact); // Max strength slightly higher
-                             logToGameSim(`⬆️⬆️ ${player.name} (${player.philosophy}) in the zone! (${Math.round(player.morale)} morale, ${player.loyalty} loyalty) - Significant offensive boost! (+${impact} strength)`);
-                        }
-
-                        // Incorporate realStatsSummary (example: influence specific play types)
-                        if (player.realStatsSummary && Math.random() < 0.12) { 
-                            const summary = player.realStatsSummary.toLowerCase();
-                            logToGameSim(`Player Narrative: ${player.name} - ${player.realStatsSummary}`); // Log the narrative
-
-                            if (player.position === "QB") {
-                                if (summary.includes("passing yards") || summary.includes("touchdowns") || summary.includes("deep threat")) {
-                                    logToGameSim(`✨ ${player.name} (QB) looking to air it out!`);
-                                    effectiveEaglesOffStrength += 5; // Increased bonus
-                                    specificTdChanceBonus += 0.02; // Increased bonus
-                                    yardVarianceMultiplier *= 1.15; // Slight increase in variance for big play potential
-                                }
-                                if (summary.includes("accurate") || summary.includes("composure")) {
-                                    logToGameSim(`🎯 ${player.name} (QB) with a composed, accurate read!`);
-                                    interceptionRiskModifier *= 0.80; // Further reduce interception risk
-                                    effectiveEaglesOffStrength += 2;
-                                }
-                            } else if (player.position === "RB") {
-                                if (summary.includes("rushing yards") || summary.includes("versatile threat")) {
-                                    logToGameSim(`💨 ${player.name} (RB) finding a seam!`);
-                                    specificYardBonus += Math.floor(Math.random() * 6) + 3; // Increased bonus
-                                    effectiveEaglesOffStrength += 3;
-                                }
-                                if (summary.includes("powerful runner")) {
-                                    logToGameSim(`💪 ${player.name} (RB) breaking a tackle!`);
-                                    specificYardBonus += Math.floor(Math.random() * 4) + 2; // Increased bonus: 2-5 yards
-                                    fumbleRiskModifier *= 1.03; // Slightly adjusted fumble risk
-                                }
-                            } else if (player.position === "WR" || player.position === "TE") {
-                                if (summary.includes("receiving yards") || summary.includes("deep threat") || summary.includes("highlight reel")) {
-                                    logToGameSim(`🙌 ${player.name} (${player.position}) making a key reception!`);
-                                    effectiveEaglesOffStrength += 4; // Increased bonus
-                                    specificYardBonus += Math.floor(Math.random() * 8) + 4; // Increased bonus
-                                    specificTdChanceBonus += 0.015;
-                                }
-                                 if (summary.includes("reliable hands") || summary.includes("contested catch")) {
-                                    logToGameSim(`🖐️ ${player.name} (${player.position}) with a secure catch!`);
-                                    fumbleRiskModifier *= 0.85; // Further reduce fumble risk
-                                    effectiveEaglesOffStrength += 1;
-                                }
-                            }
-                        }
-                    });
-
-                    effectiveEaglesOffStrength = Math.max(10, Math.min(110, effectiveEaglesOffStrength)); 
-
-                    // Score chance calculation based on effective strengths (Revised Aggressive Formula)
-                    let scoreChance = (effectiveEaglesOffStrength - (opponentTeamStrength * 0.65) + (Math.random() * 15)) / 68; // Adjusted strength multiplier from 0.75 to 0.65
-                    scoreChance += specificTdChanceBonus; // Add bonus from realStats or strategy
-                    // Add direct score chance mod from realStatsSummary if applicable (example)
-                    playersOnDrive.forEach(player => {
-                        if (player.realStatsSummary && player.realStatsSummary.toLowerCase().includes("clutch performer") && Math.random() < 0.15) { // Example keyword
-                            logToGameSim(`✨ ${player.name} showing clutch ability!`);
-                            scoreChance += 0.02; // Small direct bonus to scoreChance
-                        }
-                    });
-
-
-                    let playYards = 0;
-                    let playResultForAnim = "Play"; 
-                    let playTypeForAnim = "Offensive Play"; 
-                    let detailedPlayTypeForAnim = "Offensive Play";
-
-                    if (scoreChance > 0.55) { // TD threshold lowered from 0.58
-                        logToGameSim("Touchdown Eagles!", true); eaglesScore += 7; gameState.unansweredOpponentPoints = 0; playYards = currentPossessionEagles ? (100 - ballOnYardLine) : ballOnYardLine;
-                        detailedPlayTypeForAnim = playYards > 20 ? "Touchdown! (Long Bomb)" : "Touchdown! (Goal Line Punch)";
-                        playTypeForAnim = "Touchdown!"; // Keep for older logic if any, or simplify later
-                        playResultForAnim = "TD";
-                        if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                        // ballOnYardLine will be set at the start of the new drive
-                    } else if (scoreChance > 0.40 && ballOnYardLine > 65) { // FG Attempt threshold lowered from 0.45
-                        detailedPlayTypeForAnim = `Field Goal Attempt (${100 - ballOnYardLine + 17} yds)`; // Approx FG distance
-                        playTypeForAnim = "Field Goal Attempt";
-                        playYards = 0; 
-                        // FG success now also slightly influenced by a key ST player's rating (e.g., Kicker)
-                        const kicker = gameState.eaglesRoster.find(p => p.position === "K");
-                        const kickerFactor = kicker ? Math.max(0.8, Math.min(1.2, kicker.skills.specialTeams / 70)) : 1.0; // 70 ST is baseline
-                        const fgSuccessChance = ((eaglesAvgSTStrength / 100) * 0.90 + 0.05) * kickerFactor;
-                        if (Math.random() < fgSuccessChance) {
-                            logToGameSim("Eagles Field Goal is GOOD!", true); eaglesScore += 3; gameState.unansweredOpponentPoints = 0;
-                            playResultForAnim = "FG_GOOD";
-                            detailedPlayTypeForAnim = `FG GOOD! (${100 - ballOnYardLine + 17} yds)`;
-                        } else {
-                            logToGameSim("Eagles Field Goal is NO GOOD!", true);
-                            playResultForAnim = "FG_NO_GOOD";
-                            detailedPlayTypeForAnim = `FG NO GOOD (${100 - ballOnYardLine + 17} yds)`;
-                        }
-                        if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                    } else if (scoreChance < (0.18 * interceptionRiskModifier * fumbleRiskModifier) ) { // Turnover base chance increased from 0.15
-                        logToGameSim("Turnover! Opponent ball.", true); playYards = Math.floor(Math.random() * 5); // Small yardage for return/spot
-                        detailedPlayTypeForAnim = Math.random() < 0.5 ? "FUMBLE! Eagles Lose Ball" : "INTERCEPTION! Eagles Throw Pick";
-                        playTypeForAnim = detailedPlayTypeForAnim; 
-                        playResultForAnim = "Turnover";
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                        // ballOnYardLine for opponent's new drive will be set based on this turnover spot (simplified next)
-                    } else { // Regular play, no score or turnover
-                        playYards = Math.floor(Math.random() * 25) - 4; // Range: -4 to 20 yards (base increased slightly)
-                        playYards = Math.floor(playYards * yardVarianceMultiplier); // Apply variance
-                        playYards += specificYardBonus; // Add bonus from realStats
-                        let isBigPlay = false;
-
-                        // Big play chance more tied to strength, and bigger potential gain
-                        if (playYards > 4 && Math.random() < (effectiveEaglesOffStrength / 110)) { // Denominator slightly increased for scaling
-                            playYards += Math.floor(Math.random() * 40) + 15; // Enhanced big play logic (15 to 54 yards bonus)
-                            isBigPlay = true;
-                        }
-
-                        ballOnYardLine += playYards;
-                        yardsToGo -= playYards;
-                        detailedPlayTypeForAnim = playYards > 15 ? "Long Pass Complete!" : (playYards > 7 ? "Nice Gain!" : (playYards >= 0 ? "Short Gain." : "Loss of Yards."));
-                        if (isBigPlay) detailedPlayTypeForAnim = `BIG PLAY! ${detailedPlayTypeForAnim}`;
-                        playTypeForAnim = detailedPlayTypeForAnim; // Keep generic one updated too
-                        playResultForAnim = `${playYards} yd gain`;
-
-                        if (yardsToGo <= 0) {
-                            logToGameSim(`Eagles get a First Down! Gain of ${playYards} yards. Ball on opponent's ${100-ballOnYardLine}.`);
-                            currentDown = 1; 
-                            yardsToGo = 10;
-                            detailedPlayTypeForAnim = `First Down! (${detailedPlayTypeForAnim})`;
-                            playTypeForAnim = detailedPlayTypeForAnim;
-                        } else {
-                            currentDown++;
-                            logToGameSim(`Eagles gain ${playYards} yards. ${window.gameVisualizer.getOrdinal(currentDown)} & ${yardsToGo}. Ball on opponent's ${100-ballOnYardLine}.`);
-                        }
-
-                        if (currentDown > 4) {
-                            logToGameSim("Turnover on downs! Opponent ball.");
-                            detailedPlayTypeForAnim = "Turnover on Downs (Eagles)";
-                            playTypeForAnim = detailedPlayTypeForAnim;
-                            playResultForAnim = "Turnover";
-                            currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                            driveActive = false; // End of drive
-                        } else if (ballOnYardLine >= 60 && currentDown === 4 && yardsToGo > 3) { 
-                            logToGameSim("Eagles punt."); 
-                            playYards = 30 + Math.floor(Math.random() * 15); // Punt distance
-                            detailedPlayTypeForAnim = "Eagles Punt";
-                            playTypeForAnim = detailedPlayTypeForAnim;
-                            playResultForAnim = "Punt";
-                            // ballOnYardLine += playYards; // This was incorrect for punt logic
-                            currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                            driveActive = false; // End of drive
-                            // ballOnYardLine for opponent's new drive will be set based on punt result (simplified next)
-                            playYards = 0; // Reset playYards for animation if it's just a punt event
-                        }
-                    }
-                    if (window.gameVisualizer && window.gameVisualizer.ctx) {
-                        window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        await window.gameVisualizer.animatePlay({ yards: playYards, result: playResultForAnim, playType: playTypeForAnim, detailedPlayType: detailedPlayTypeForAnim });
-                        window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
-                    }
-                    // Store results of this play for potential challenge on the *next* play
-                    previousPlayResultOutcome = playResultForAnim;
-                    previousPlayTypeOutcome = playTypeForAnim;
-                    previousDetailedPlayTypeOutcome = detailedPlayTypeForAnim;
-
-                } else { // Opponent possession
-                    logToGameSim(`${opponent.opponentName} possession...`);
-                    let effectiveOpponentStrength = opponentTeamStrength; 
-                    let effectiveEaglesDefStrength = currentDriveEaglesDefStrength + tempDefStrengthMod;
-                    specificYardBonus = 0; // Reset for opponent drive
-
-                    // Simulate a few key opponent players' impact (conceptual)
-                    const opponentKeyPlayerCount = Math.min(opponentRoster.length, 3);
-                    for(let i=0; i < opponentKeyPlayerCount; i++) {
-                        const oppPlayer = opponentRoster[Math.floor(Math.random() * opponentRoster.length)];
-                        if (oppPlayer) {
-                            let individualOppPlayBoost = 0;
-                            if (oppPlayer.skills.offence > 80 && Math.random() < 0.1) individualOppPlayBoost += (oppPlayer.skills.offence - 80) / 5;
-                            else if (oppPlayer.skills.offence < 50 && Math.random() < 0.05) individualOppPlayBoost -= (50 - oppPlayer.skills.offence) / 10;
-                            effectiveOpponentStrength += individualOppPlayBoost;
-                            // Could log opponent player boosts if desired for debugging, but not to player
-                        }
-                    }
-
-
-                    // Apply individual player traits and morale/loyalty impact on defense
-                     playersOnDrive.forEach(player => { // These are Eagles players on defense
-                        // Individual Stat-based "Momentum/Focus" for this play (defense)
-                        let individualDefensiveBoost = 0;
-                        if (player.skills.defence > 80 && Math.random() < 0.1) individualDefensiveBoost += (player.skills.defence - 80) / 5;
-                        else if (player.skills.defence < 50 && Math.random() < 0.05) individualDefensiveBoost -= (50 - player.skills.defence) / 10;
-                        effectiveEaglesDefStrength += individualDefensiveBoost;
-                        if(individualDefensiveBoost > 0) logToGameSim(`🛡️ ${player.name} locks in on defense! +${individualDefensiveBoost.toFixed(1)} boost!`);
-                        if(individualDefensiveBoost < 0) logToGameSim(`⚠️ ${player.name} caught off guard on D! ${individualDefensiveBoost.toFixed(1)} hit.`);
-
-
-                        const philosophyTemplate = PLAYER_PHILOSOPHY_TEMPLATES[player.philosophy];
-                        if (!philosophyTemplate) return;
-
-                        // Trait effects
-                        if (player.uniqueTraitName === "Stay the Course" && Math.random() < 0.20) { 
-                            logToGameSim(`🛡️ ${player.name} (${philosophyTemplate.name}) with 'Stay the Course' disrupts the opponent!`);
-                            effectiveOpponentStrength -= 12; // Increased from -10
-                        } else if (player.uniqueTraitName === "Unit Cohesion" && Math.random() < 0.18) { 
-                             // Unit Cohesion on defense could manifest as better team tackling or coverage adjustments
-                             logToGameSim(`🛡️ Defensive 'Unit Cohesion' from ${player.name} (${philosophyTemplate.name}) solidifies the Eagles' D!`);
-                             effectiveEaglesDefStrength += 6; // Increased from +5
-                             effectiveOpponentStrength -= 5; // Increased from -4
-                        }
-                        
-                        // Morale/Loyalty Impact (negative impact on defense)
-                        const moraleLoyaltyAvg = (player.morale + player.loyalty) / 2;
-                        if (moraleLoyaltyAvg < 35 && Math.random() < 0.08) { // Lowered threshold, increased chance
-                             const impact = Math.floor(Math.random() * 6) + 4; // Increased impact: 4-9
-                             effectiveEaglesDefStrength = Math.max(10, effectiveEaglesDefStrength - impact);
-                             logToGameSim(`🔻🔻 ${player.name} (${player.philosophy}) critically struggling (${Math.round(player.morale)} morale, ${player.loyalty} loyalty) - Major defensive lapse! (-${impact} strength)`);
-                        } else if (moraleLoyaltyAvg > 80 && Math.random() < 0.07) { // Increased threshold, increased chance
-                             const impact = Math.floor(Math.random() * 6) + 4; // Increased impact: 4-9
-                             effectiveEaglesDefStrength = Math.min(115, effectiveEaglesDefStrength + impact); // Max strength slightly higher
-                             logToGameSim(`⬆️⬆️ ${player.name} (${player.philosophy}) playing lights out on D! (${Math.round(player.morale)} morale, ${player.loyalty} loyalty) - Significant defensive boost! (+${impact} strength)`);
-                        }
-
-                        // Incorporate realStatsSummary for defensive players
-                        if (player.realStatsSummary && Math.random() < 0.12) { 
-                            const summary = player.realStatsSummary.toLowerCase();
-                            logToGameSim(`Player Narrative (Defense): ${player.name} - ${player.realStatsSummary}`); // Log the narrative
-
-                            if (player.position === "DE" || player.position === "DT" || player.position === "LB") {
-                                if (summary.includes("sacks") || summary.includes("disruptive") || summary.includes("pass rusher") || summary.includes("shutdown")) {
-                                    logToGameSim(`💥 ${player.name} (${player.position}) generating significant pressure or shutting down the play!`);
-                                    effectiveOpponentStrength -= 7; // Increased malus
-                                    opponentScoreChance *= 0.88; // Reduce opponent score chance
-                                }
-                            } else if (player.position === "CB" || player.position === "S") {
-                                if (summary.includes("interceptions") || summary.includes("shutdown") || summary.includes("tight coverage")) {
-                                    logToGameSim(`🔒 ${player.name} (${player.position}) with blanket coverage or turnover threat!`);
-                                    effectiveOpponentStrength -= 6; // Increased malus
-                                    opponentScoreChance *= 0.82; // Reduce opponent score chance
-                                }
-                            }
-                        }
-                    });
-
-                    effectiveOpponentStrength = Math.max(10, Math.min(110, effectiveOpponentStrength));
-                    effectiveEaglesDefStrength = Math.max(10, Math.min(110, effectiveEaglesDefStrength));
-
-                    let opponentScoreChance = (effectiveOpponentStrength - (effectiveEaglesDefStrength * 0.65) + (Math.random() * 15)) / 68; // Adjusted strength multiplier from 0.75 to 0.65
-                    let playYardsOpp = 0;
-                    let playResultForAnimOpp = "Play";
-                    let playTypeForAnimOpp = "Opponent Offensive Play";
-                    let detailedPlayTypeForAnimOpp = "Opponent Offensive Play";
-
-                    if (opponentScoreChance > 0.57) { // Opponent TD threshold lowered from 0.60
-                        logToGameSim(`Touchdown ${opponent.opponentName}.`, true); opponentScore += 7; gameState.unansweredOpponentPoints += 7; playYardsOpp = currentPossessionEagles ? ballOnYardLine : (100-ballOnYardLine); 
-                        detailedPlayTypeForAnimOpp = playYardsOpp > 20 ? `TD ${opponent.opponentName}! (Long Bomb)` : `TD ${opponent.opponentName}! (Short Score)`;
-                        playTypeForAnimOpp = "Touchdown!";
-                        playResultForAnimOpp = "TD";
-                        if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                    } else if (opponentScoreChance > 0.42 && ballOnYardLine < 35) { // Opponent FG Attempt threshold lowered from 0.45
-                        detailedPlayTypeForAnimOpp = `Opponent FG Attempt (${ballOnYardLine + 17} yds)`;
-                        playTypeForAnimOpp = "Field Goal Attempt";
-                        playYardsOpp = 0;
-                        
-                        let fgSuccessChanceOppModifier = 1.0;
-                        // --- "Ice the Kicker" Decision Point ---
-                        const isCrucialKick = (q >= 4 && Math.abs(eaglesScore - (opponentScore + 3)) <= 3) || (q >= 3 && Math.abs(eaglesScore - (opponentScore + 3)) <= 0);
-                        if (isCrucialKick && eaglesTimeoutsLeft > 0 && Math.random() < 0.40) { // 40% chance in crucial situations
-                            const iceKickerContext = {
-                                text: `Crucial Field Goal attempt by ${opponent.opponentName}! Do you call a timeout to ice the kicker? (Timeouts left: ${eaglesTimeoutsLeft})`,
-                                choices: [
-                                    { text: "Yes, ice the kicker! (Cost: 1 Timeout)", action: "ice_kicker_yes" },
-                                    { text: "No, let them kick.", action: "ice_kicker_no" }
-                                ]
-                            };
-                            const userIceChoice = await new Promise(resolveUserChoice => {
-                                renderDecisionPointUI(iceKickerContext, q, `PHI ${eaglesScore}-${opponent.opponentName.substring(0,3).toUpperCase()} ${opponentScore}`, resolveUserChoice);
-                            });
-                            logToGameSim(`GM Ice Kicker Decision: ${userIceChoice}`);
-                            if (userIceChoice === "ice_kicker_yes") {
-                                if (eaglesTimeoutsLeft > 0) {
-                                    eaglesTimeoutsLeft--;
-                                    logToGameSim("Timeout called by the Eagles to ice the kicker!", true);
-                                    fgSuccessChanceOppModifier = 0.88; // 12% reduction in kicker's success chance
-                                    if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                                    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate timeout duration
-                                } else {
-                                    logToGameSim("Wanted to ice kicker, but no timeouts left!");
-                                }
-                            } else {
-                                logToGameSim("GM decides not to ice the kicker.");
-                            }
-                        }
-
-                        // Calculate opponent's ST strength (assuming a kicker exists or default)
-                        const opponentKicker = gameState.allNFLTeams[opponent.opponentName]?.find(p => p.position === "K");
-                        const opponentAvgSTStrength = opponentKicker ? opponentKicker.skills.specialTeams : 50; // Default if no kicker
-                        const fgSuccessChanceOpp = ((opponentAvgSTStrength / 100) * 0.90 + 0.05) * fgSuccessChanceOppModifier; // Apply ice modifier
-                        if (Math.random() < fgSuccessChanceOpp) {
-                            logToGameSim(`${opponent.opponentName} Field Goal is GOOD!`, true); opponentScore += 3; gameState.unansweredOpponentPoints += 3;
-                            playResultForAnimOpp = "FG_GOOD";
-                            detailedPlayTypeForAnimOpp = `Opponent FG GOOD! (${ballOnYardLine + 17} yds)`;
-                        } else {
-                            logToGameSim(`${opponent.opponentName} Field Goal is NO GOOD!`, true);
-                            playResultForAnimOpp = "FG_NO_GOOD";
-                            detailedPlayTypeForAnimOpp = `Opponent FG NO GOOD (${ballOnYardLine + 17} yds)`;
-                        }
-                        if (window.gameVisualizer && window.gameVisualizer.ctx) window.gameVisualizer.setScore(eaglesScore, opponentScore, q);
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                    } else if (opponentScoreChance < 0.20) { // Eagles force turnover, base chance increased from 0.18
-                        logToGameSim("Eagles force a turnover!", true); playYardsOpp = Math.floor(Math.random() * 5); // Small yardage for return/spot
-                        detailedPlayTypeForAnimOpp = Math.random() < 0.5 ? "FUMBLE! Eagles Recover!" : "INTERCEPTION! Eagles Pick it Off!";
-                        playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
-                        playResultForAnimOpp = "Turnover";
-                        currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                        driveActive = false; // End of drive
-                    } else { // Regular opponent play
-                        playYardsOpp = Math.floor(Math.random() * 25) - 4; // Range: -4 to 20 yards (base increased slightly)
-                        let isOppBigPlay = false;
-                        // Opponent big play logic (using effectiveOpponentStrength)
-                        // Big play chance more tied to strength, and bigger potential gain
-                        if (playYardsOpp > 4 && Math.random() < (effectiveOpponentStrength / 110)) { // Denominator slightly increased for scaling
-                            playYardsOpp += Math.floor(Math.random() * 40) + 15; // Enhanced big play logic (15 to 54 yards bonus)
-                            isOppBigPlay = true;
-                        }
-
-                        ballOnYardLine -= playYardsOpp; 
-                        yardsToGo -= playYardsOpp;
-                        detailedPlayTypeForAnimOpp = playYardsOpp > 15 ? "Opponent Long Gain!" : (playYardsOpp > 7 ? "Opponent Nice Gain!" : (playYardsOpp >=0 ? "Opponent Short Gain." : "Opponent Loss of Yards."));
-                        if(isOppBigPlay) detailedPlayTypeForAnimOpp = `OPP BIG PLAY! ${detailedPlayTypeForAnimOpp}`;
-                        playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
-                        playResultForAnimOpp = `${playYardsOpp} yd gain`;
-
-                        if (yardsToGo <= 0) {
-                            logToGameSim(`${opponent.opponentName} gets a First Down! Gain of ${playYardsOpp} yards. Ball on Eagles' ${ballOnYardLine}.`);
-                            currentDown = 1; yardsToGo = 10;
-                            detailedPlayTypeForAnimOpp = `Opponent First Down! (${detailedPlayTypeForAnimOpp})`;
-                            playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
-                        } else {
-                            currentDown++;
-                            logToGameSim(`${opponent.opponentName} gains ${playYardsOpp} yards. ${window.gameVisualizer.getOrdinal(currentDown)} & ${yardsToGo}. Ball on Eagles' ${ballOnYardLine}.`);
-                        }
-                        if (currentDown > 4) {
-                            logToGameSim("Eagles force Turnover on Downs!");
-                            detailedPlayTypeForAnimOpp = "Turnover on Downs (Opponent)";
-                            playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
-                            playResultForAnimOpp = "Turnover";
-                            currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                            driveActive = false; // End of drive
-                        } else if (ballOnYardLine <= 40 && currentDown === 4 && yardsToGo > 3) { 
-                            logToGameSim(`${opponent.opponentName} punts.`); 
-                            playYardsOpp = 30 + Math.floor(Math.random() * 15); // Punt distance
-                            detailedPlayTypeForAnimOpp = "Opponent Punt";
-                            playTypeForAnimOpp = detailedPlayTypeForAnimOpp;
-                            playResultForAnimOpp = "Punt";
-                            // ballOnYardLine -= playYardsOpp; // Incorrect for punt
-                            currentPossessionEagles = !currentPossessionEagles; // Possession changes
-                            driveActive = false; // End of drive
-                            playYardsOpp = 0; // Reset for animation if just a punt event
-                        }
-                    }
-                    if (window.gameVisualizer && window.gameVisualizer.ctx) {
-                        window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
-                        await window.gameVisualizer.animatePlay({ yards: playYardsOpp, result: playResultForAnimOpp, playType: playTypeForAnimOpp, detailedPlayType: detailedPlayTypeForAnimOpp });
-                        window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
-                    }
-                    // Store results of this play for potential challenge on the *next* play
-                    previousPlayResultOutcome = playResultForAnimOpp;
-                    previousPlayTypeOutcome = playTypeForAnimOpp;
-                    previousDetailedPlayTypeOutcome = detailedPlayTypeForAnimOpp;
-                }
-                if (window.gameVisualizer && window.gameVisualizer.ctx) { 
-                    window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, eaglesTimeoutsLeft, opponentTimeoutsLeft);
+            if (fourthDownDecisionAction === "ATTEMPT_FG") {
+                logToGameSim(`${attackerIsEagles ? "Eagles" : opponent.opponentName} line up for a Field Goal...`);
+                const fgDistance = (attackerIsEagles ? (100 - ballOnYardLine) : ballOnYardLine) + 17;
+                logToGameSim(`FG attempt from ${fgDistance} yards.`);
+                
+                const kickerModifier = attackerIsEagles ? eaglesSpecialTeamsKickerModifier : opponentSpecialTeamsKickerModifier;
+                
+                let distancePenalty = 0;
+                if (fgDistance >= 30) {
+                    distancePenalty = Math.floor((fgDistance - 30) / 3);
                 }
                 
-                // End of play logic
-                playsThisQuarter++;
+                const fgRoll = Math.floor(Math.random() * 20) + 1;
+                const successTarget = 10; // Base success target, can be adjusted for balance
 
-                if (playsThisQuarter >= MAX_PLAYS_PER_QUARTER && q < 4) {
-                    logToGameSim(`--- End of Quarter ${q} ---`);
+                const fgScore = fgRoll + kickerModifier - distancePenalty;
+                const fgIsGood = fgScore >= successTarget;
+
+                logToGameSim(`FG Roll: ${fgRoll} + K_Mod ${kickerModifier} - DistPenalty ${distancePenalty} (for ${fgDistance}yds) = ${fgScore}. Needed >= ${successTarget}`);
+
+                if (window.gameVisualizer && window.gameVisualizer.ctx) {
+                    // Set ball position for FG animation (at the spot of the kick)
+                    // The `ballOnYardLine` here is the game's current ball position (0-100 from Eagles' goal line).
+                    // We need to convert this to the visualizer's pixel X.
+                    window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, attackerIsEagles);
+                    window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+                    
+                    await window.gameVisualizer.animatePlay({
+                        yards: 0, // FG animation is handled by animateFieldGoalKick, not yardage movement here
+                        result: fgIsGood ? "FG_GOOD" : "FG_NO_GOOD",
+                        playType: "Field Goal Attempt",
+                        detailedPlayType: `Field Goal Attempt (${fgDistance} yds)`
+                    }, attackerIsEagles ? 'Eagles' : 'Opponent');
                 }
 
-                // Blowout rule check
-                if (q >= 3 && playsThisQuarter > 5 && Math.abs(eaglesScore - opponentScore) > 28) { // Check after a few plays in Q3/Q4
-                    logToGameSim("Game result has become clear, fast-forwarding to the end...");
-                    gameEndedEarly = true; 
+                if (fgIsGood) {
+                    logToGameSim("FIELD GOAL IS GOOD!", true);
+                    if (attackerIsEagles) eaglesScore += 3; else opponentScore += 3;
+                    scoreEvent = 'FG_GOOD'; // Mark that a score happened
+                    currentPossessionEagles = !attackerIsEagles; 
+                    ballOnYardLine = currentPossessionEagles ? 25 : 75; 
+                    currentDown = 1; yardsToGo = 10;
+                    window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+                    window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+                } else {
+                    logToGameSim("FIELD GOAL IS NO GOOD!", true);
+                    currentPossessionEagles = !attackerIsEagles; 
+                    ballOnYardLine = 100 - ballOnYardLine; 
+                    currentDown = 1; yardsToGo = 10;
+                    turnover = true; // Signifies possession change
+                    window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+                    window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
                 }
-            } // End of while loop for plays in a quarter
-            if (gameEndedEarly) break; // Break from quarter loop if game ended early
-        } // End of for loop for quarters
+            } else if (fourthDownDecisionAction === "PUNT") {
+                logToGameSim(`${attackerIsEagles ? "Eagles" : opponent.opponentName} elect to PUNT.`);
+                playAudio('sfx_punt');
+                const punterModifier = attackerIsEagles ? eaglesSpecialTeamsPunterModifier : opponentSpecialTeamsPunterModifier;
+                const puntRoll = Math.floor(Math.random() * 20) + 1;
+                let puntDistance = (puntRoll + punterModifier) * 2 + 20; // (d20 + PunterMod) * 2 + 20 yards
+                puntDistance = Math.max(10, Math.min(70, puntDistance)); // Ensure punt distance is between 10 and 70 yards
+                logToGameSim(`Punt Roll: ${puntRoll} + P_Mod ${punterModifier} = ${puntRoll + punterModifier}. Base Punt: ${(puntRoll + punterModifier) * 2 + 20}. Final Distance: ${puntDistance.toFixed(0)} yards.`);
+                
+                const originalBallOnYardLineForPunt = ballOnYardLine; // Store before modification
 
-        console.log("simulateGameInstance: Game simulation loop finished.");
-        await new Promise(resolve => setTimeout(resolve, 800)); // Final pause before showing result screen
-        console.log("simulateGameInstance: Final pause finished.");
+                if (attackerIsEagles) {
+                    ballOnYardLine += puntDistance;
+                } else {
+                    ballOnYardLine -= puntDistance;
+                }
+                
+                if (ballOnYardLine >= 100 && attackerIsEagles) { 
+                    ballOnYardLine = 80; 
+                    logToGameSim("Touchback. Ball on the 20.");
+                } else if (ballOnYardLine <= 0 && !attackerIsEagles) { 
+                    ballOnYardLine = 20; 
+                    logToGameSim("Touchback. Ball on the 20.");
+                }
+                ballOnYardLine = Math.max(1, Math.min(99, ballOnYardLine)); // Clamp on field
 
-        logToGameSim(`--- FINAL SCORE --- Eagles ${eaglesScore} - ${opponent.opponentName} ${opponentScore}`, true);
+                if (window.gameVisualizer && window.gameVisualizer.ctx) {
+                    // Set ball position for Punt animation (at the spot of the kick)
+                    // The `originalBallOnYardLineForPunt` is the game's current ball position (0-100 from Eagles' goal line).
+                    // We need to convert this to the visualizer's pixel X.
+                    window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(originalBallOnYardLineForPunt, attackerIsEagles);
+                    window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+
+                    await window.gameVisualizer.animatePlay({
+                        yards: puntDistance, // Pass positive punt distance, direction handled by actingTeam
+                        result: "Punt",
+                        playType: "Punt",
+                        detailedPlayType: `Punt (${puntDistance.toFixed(0)} yds from own ${attackerIsEagles ? originalBallOnYardLineForPunt : 100 - originalBallOnYardLineForPunt})`
+                    }, attackerIsEagles ? 'Eagles' : 'Opponent');
+                }
+
+                currentPossessionEagles = !attackerIsEagles;
+                ballOnYardLine = 100 - ballOnYardLine; 
+                currentDown = 1; yardsToGo = 10;
+                turnover = true; 
+                window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+                window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+            }
+            // If "GO_FOR_IT", normal play logic below will handle it.
+        }
+        // --- End 4th Down Decision ---
+
+
+        // Update Visualizer - Only call animatePlay if it wasn't a special teams play that already animated
+        if (window.gameVisualizer && window.gameVisualizer.ctx && !(fourthDownDecisionAction === "ATTEMPT_FG" || fourthDownDecisionAction === "PUNT")) {
+            const pseudoQuarter = Math.ceil(currentPlayNumber / (TOTAL_PLAYS_PER_GAME / 4));
+            window.gameVisualizer.setScore(eaglesScore, opponentScore, pseudoQuarter);
+            window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
+            window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, gameState.eaglesChallengesLeft, 3);
+            
+            // Set visualizer ball position before regular play animation
+            // The `ballOnYardLine` here is the game's current ball position *after* the play's yardage has been applied.
+            // We need the position *before* the play for the animation's starting point.
+            const playStartingBallOnYardLine = attackerIsEagles ? (ballOnYardLine - yardageGained) : (ballOnYardLine + yardageGained);
+            window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(playStartingBallOnYardLine, attackerIsEagles);
+            window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+
+
+            let animPlayType = outcome.category;
+            if (scoreEvent === 'TD_EAGLES' || scoreEvent === 'TD_OPPONENT') animPlayType = "Touchdown!";
+            else if (turnover) animPlayType = "Turnover!";
+
+            await window.gameVisualizer.animatePlay({
+                yards: yardageGained,
+                result: scoreEvent || (turnover ? "Turnover" : `${yardageGained} yd gain`), // Pass TD_EAGLES/TD_OPPONENT if it's a score
+                playType: animPlayType,
+                detailedPlayType: playDescription
+            }, attackerIsEagles ? 'Eagles' : 'Opponent');
+        }
+        
+        // If possession changed due to score or turnover, reset down for new possession
+        if (scoreEvent || turnover) {
+            currentDown = 1;
+            yardsToGo = 10;
+            // Ball position already set for kickoff/turnover spot
+            if (window.gameVisualizer && window.gameVisualizer.ctx) {
+                 window.gameVisualizer.setPossession(currentPossessionEagles ? 'Eagles' : 'Opponent');
+                 window.gameVisualizer.updateGameSituation(currentDown, yardsToGo, gameState.eaglesChallengesLeft, 3);
+            }
+        }
+        
+        // Ensure ballOnYardLine stays within 0-100 (e.g. after a long gain from deep)
+        // This is a rough clamp, actual goal line logic is above. This prevents ball from going "past" 100.
+        ballOnYardLine = Math.max(0, Math.min(100, ballOnYardLine));
+
+        // Safety Check - Update visualizer ball position after safety
+        if (safetyOccurred) {
+            window.gameVisualizer.ballPosition.x = window.gameVisualizer.getPixelXFromGameYardLine(ballOnYardLine, currentPossessionEagles);
+            window.gameVisualizer.ballPosition.y = window.gameVisualizer.canvas.height / 2;
+        }
+
+        // Brief pause between plays
+        await new Promise(resolve => setTimeout(resolve, 750)); // 0.75 second pause
+
+        // Play end of quarter whistle
+        const playsPerQuarter = TOTAL_PLAYS_PER_GAME / 4;
+        if (currentPlayNumber % playsPerQuarter === 0 && currentPlayNumber < TOTAL_PLAYS_PER_GAME) {
+            logToGameSim(`--- End of Quarter ${currentPlayNumber / playsPerQuarter} ---`, true);
+            playAudio('sfx_whistle_end_quarter');
+            firstDownSoundPlayedThisQuarter = false; // Reset for the new quarter
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Longer pause for quarter end
+        }
+    } // End of main play loop
+
+    logToGameSim(`--- FINAL SCORE --- Eagles ${eaglesScore} - ${opponent.opponentName} ${opponentScore}`, true);
     const win = eaglesScore > opponentScore;
-    let moraleChangeText = "";
+    let moraleChangeText = ""; // Placeholder for morale changes
+
+    let advertiserRevenue = 0;
     if (win) {
         gameState.seasonWins++;
         logToGameSim("EAGLES WIN!", true);
-        // Morale boost adjusted based on philosophy and win margin
-        gameState.eaglesRoster.forEach(p => {
-            const moraleImpact = PLAYER_PHILOSOPHY_TEMPLATES[p.philosophy]?.baseStatModifiers.moraleImpact || 0;
-            const winMarginBonus = Math.abs(eaglesScore - opponentScore) > 10 ? 2 : 0;
-            p.morale = Math.round(Math.min(100, p.morale + (5 + moraleImpact + winMarginBonus)));
-        });
-        moraleChangeText = "Team morale significantly boosted by the win!";
+        moraleChangeText = "Team morale boosted by the win!";
+        advertiserRevenue = 5000000; // Base revenue for a win
     } else if (eaglesScore < opponentScore) {
         gameState.seasonLosses++;
         logToGameSim("Eagles lose.", true);
-         // Morale hit adjusted based on philosophy and loss margin
-        gameState.eaglesRoster.forEach(p => {
-             const moraleImpact = PLAYER_PHILOSOPHY_TEMPLATES[p.philosophy]?.baseStatModifiers.moraleImpact || 0;
-             const lossMarginPenalty = Math.abs(eaglesScore - opponentScore) > 10 ? 2 : 0;
-             p.morale = Math.round(Math.max(0, p.morale - (5 - moraleImpact + lossMarginPenalty)));
-        });
         moraleChangeText = "Team morale took a hit after the loss.";
+        advertiserRevenue = 1000000; // Base revenue for a loss
     } else {
         logToGameSim("It's a TIE!", true);
-         // Morale change for a tie adjusted based on philosophy
-        gameState.eaglesRoster.forEach(p => {
-             const moraleImpact = PLAYER_PHILOSOPHY_TEMPLATES[p.philosophy]?.baseStatModifiers.moraleImpact || 0;
-             p.morale = Math.round(Math.max(0, Math.min(100, p.morale + moraleImpact))); // Small shift based on philosophy
-        });
         moraleChangeText = "A hard-fought tie. Mixed feelings in the locker room.";
+        advertiserRevenue = 2500000; // Base revenue for a tie (mid-point)
     }
 
-    gameState.currentOpponentIndex++;
+    // Apply Eco-Fiscal Modifier to advertiser revenue
+    // Formula: baseAmount * (1 + (gmReputation.ecoFiscal - 50) / 50 * 0.2)
+    const ecoFiscalModifier = (gameState.gmReputation.ecoFiscal - 50) / 50 * 0.2;
+    advertiserRevenue = Math.floor(advertiserRevenue * (1 + ecoFiscalModifier));
+    gameState.teamBudget += advertiserRevenue;
+    showNotification(`Advertiser Revenue: $${advertiserRevenue.toLocaleString()} added to budget!`, false, 4000, 'bottom');
+
+
+    gameState.currentOpponentIndex++; // Move to next opponent for next game if any
+
+    // Display results
     const finishEarlyButton = document.getElementById('finish-game-early');
     if (finishEarlyButton) {
-        finishEarlyButton.style.display = 'block';
+        finishEarlyButton.style.display = 'block'; // Should already be hidden by renderDecisionPointUI if that was active
         finishEarlyButton.onclick = () => {
             renderGameResultScreen({ win: win, eaglesScore: eaglesScore, opponentScore: opponentScore, opponentName: opponent.opponentName, moraleChangeText: moraleChangeText });
         };
+        // Auto-proceed after a delay
         setTimeout(() => {
-            if (gameState.currentScreen === 'gameDaySim') {
+            if (gameState.currentScreen === 'gameDaySim') { // Ensure we are still on sim screen
                 renderGameResultScreen({ win: win, eaglesScore: eaglesScore, opponentScore: opponentScore, opponentName: opponent.opponentName, moraleChangeText: moraleChangeText });
             }
-        }, 7000);
+        }, 2000); // Shorter delay for new sim
     } else {
+        // Fallback if button not found (should not happen if screen rendered correctly)
         renderGameResultScreen({ win: win, eaglesScore: eaglesScore, opponentScore: opponentScore, opponentName: opponent.opponentName, moraleChangeText: moraleChangeText });
     }
 }
 
 
 function showNotification(message, isError = false, duration = 3000, position = 'top') {
+    // Removed notification sound effect as requested.
     const notificationDiv = document.createElement('div');
     notificationDiv.textContent = message;
     let baseStyle = "position:fixed; left:50%; transform:translateX(-50%); padding:12px 22px; border-radius:6px; z-index:1005; box-shadow: 0 3px 15px rgba(0,0,0,0.2); font-size: 1.05em; transition: opacity 0.5s ease, top 0.5s ease, bottom 0.5s ease; opacity: 0;"; // Start with opacity 0
@@ -3164,7 +3461,7 @@ function showNotification(message, isError = false, duration = 3000, position = 
  * The budget is a base amount modified by a percentage based on Intel.
  */
 function updateBudgetBasedOnIntel() {
-    const baseBudget = 300000000; // Define the base budget
+    const baseBudget = 150000000; // Define the base budget
     // Calculate modifier: 0% at 150 Intel, -50% at 0 Intel, +50% at 300+ Intel
     const intelModifierPercentage = Math.max(-0.5, Math.min(0.5, (gameState.scoutingIntel - 150) / 150 * 0.5));
     gameState.teamBudget = Math.max(0, Math.floor(baseBudget * (1 + intelModifierPercentage))); // Ensure budget doesn't go below 0
@@ -3543,6 +3840,38 @@ window.gameVisualizer = {
         this.drawBall(this.ballPosition.x, this.ballPosition.y);
     },
 
+    getPixelXFromGameYardLine: function(gameYardLine, isEaglesAttacking) {
+        // gameYardLine is 0-100 from the perspective of the attacking team.
+        // 0 is their own goal line, 100 is the opponent's goal line they are trying to reach.
+        
+        const endZoneVisualWidth = this.yardLineSpacing * 1.5; // Visual width of endzone on canvas
+        
+        // Define pixel X coordinates of the goal lines on the canvas
+        // Opponent's goal line (left side of field, where Eagles score by reaching it from the right)
+        const opponentGoalLinePixelX = this.fieldPadding + endZoneVisualWidth;
+        // Eagles' goal line (right side of field, where Opponent scores by reaching it from the left)
+        const eaglesGoalLinePixelX = this.canvas.width - this.fieldPadding - endZoneVisualWidth;
+        
+        const playableFieldWidthPixels = eaglesGoalLinePixelX - opponentGoalLinePixelX;
+        const pixelsPerGameYard = playableFieldWidthPixels / 100;
+
+        let pixelX;
+        if (isEaglesAttacking) {
+            // Eagles attack from right to left on canvas.
+            // Their 0-yard line (own goal) corresponds to eaglesGoalLinePixelX.
+            // Their 100-yard line (opponent's goal) corresponds to opponentGoalLinePixelX.
+            pixelX = eaglesGoalLinePixelX - (gameYardLine * pixelsPerGameYard);
+        } else { // Opponent is attacking
+            // Opponent attacks from left to right on canvas.
+            // Their 0-yard line (own goal) corresponds to opponentGoalLinePixelX.
+            // Their 100-yard line (Eagles' goal) corresponds to eaglesGoalLinePixelX.
+            pixelX = opponentGoalLinePixelX + (gameYardLine * pixelsPerGameYard);
+        }
+        
+        // Clamp to ensure ball stays visually on/near the field, adjust with playerIconRadius if needed for edges
+        return Math.max(this.fieldPadding + this.playerIconRadius, Math.min(this.canvas.width - this.fieldPadding - this.playerIconRadius, pixelX));
+    },
+
     getOrdinal: function(n) {
         const s = ["th", "st", "nd", "rd"];
         const v = n % 100;
@@ -3574,48 +3903,57 @@ window.gameVisualizer = {
         this.drawPlayerIconWithBall();
     },
 
-    animatePlay: async function(playData) { // { yards: number, result: string, playType?: string, detailedPlayType?: string }
+    animatePlay: async function(playData, actingTeam) { // { yards: number, result: string, playType?: string, detailedPlayType?: string }, actingTeam: 'Eagles' or 'Opponent'
         return new Promise(async (resolve) => {
             if (!this.ctx || !this.canvas) {
                 console.warn("Visualizer context or canvas not available for animatePlay.");
                 resolve(); // Resolve immediately if visualizer isn't ready
                 return;
             }
-            const initialPossessingTeam = this.possessingTeam; // Capture at the start
-            console.log(`Visualizer: Animating play for ${initialPossessingTeam}`, playData); // Modified log
+            // const initialPossessingTeam = this.possessingTeam; // No longer relying on this.possessingTeam for animation logic
+            console.log(`Visualizer: Animating play for ${actingTeam}`, playData);
 
-            const pixelsPerYard = this.yardLineSpacing / 10;
-            let yardageSign = (initialPossessingTeam === 'Eagles') ? 1 : -1; // Use captured value
+            const pixelsPerYard = this.yardLineSpacing / 10; // This is visual pixels per 10 game yards on the main field display
+            // Corrected yardageSign for canvas coordinates:
+            // Eagles gain yards by moving LEFT (decreasing X).
+            // Opponent gains yards by moving RIGHT (increasing X).
+            let yardageSign = (actingTeam === 'Eagles') ? -1 : 1; 
             const endZoneEntryDepth = this.yardLineSpacing * 0.5; // How far into the endzone the animation goes for a TD
 
             let targetX;
-            if (playData.result === 'TD') {
+            if (playData.result === 'TD' || (playData.result && playData.result.startsWith('TD_'))) { // Check for TD_EAGLES or TD_OPPONENT as well
                 // Ensure the animation target is clearly within the endzone
-                if (initialPossessingTeam === 'Eagles') { // Use captured value
+                if (actingTeam === 'Eagles') {
                     targetX = this.canvas.width - this.fieldPadding - endZoneEntryDepth;
                 } else { // Opponent scoring in Eagles' endzone (left side of canvas)
                     targetX = this.fieldPadding + endZoneEntryDepth;
                 }
-                console.error(`[ animatePlay TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}`); 
-                logToGameSim(`Visualizer: TD animation target set to ${targetX} for ${initialPossessingTeam}`); // Use captured
+                logToGameSim(`Visualizer: TD animation target set to ${targetX} for ${actingTeam}`);
             } else {
                 targetX = this.ballPosition.x + (playData.yards * pixelsPerYard * yardageSign);
-                console.error(`[ animatePlay non-TD ] initialPossessingTeam: ${initialPossessingTeam}, calculated targetX: ${targetX}, from yards: ${playData.yards}, current ball.x: ${this.ballPosition.x}`);
             }
-            
+
             // Clamp targetX to be within playable field boundaries, respecting player icon radius
             // The endzone target for TD is already set to be within bounds.
             if (playData.result !== 'TD') {
                 targetX = Math.min(this.canvas.width - this.fieldPadding - this.playerIconRadius, Math.max(this.fieldPadding + this.playerIconRadius, targetX));
             }
 
+            let animationDuration = 1500; 
+            let playTypeDuration = 3000; // Show play type for 3 seconds
+
+            // Adjust durations for smaller plays
+            const smallPlayCategories = ["Minimal Gain", "Positive Gain", "Solid Gain", "No Gain / Stalemate", "Loss / Disruption", "Significant Stop"];
+            if (playData.playType && smallPlayCategories.includes(playData.playType)) {
+                animationDuration = 375; // Increased from 250
+                playTypeDuration = 750; // Increased from 625
+                console.log(`Adjusting animation for small play: ${playData.playType}`);
+            }
 
             let animationStartTime = null;
-            const animationDuration = 1000; 
             const startX = this.ballPosition.x;
-            const displayPlayType = playData.detailedPlayType || playData.playType || (this.possessingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
+            const displayPlayType = playData.detailedPlayType || playData.playType || (actingTeam === "Eagles" ? "Eagles Play" : "Opponent Play");
             let playTypeShownTime = 0;
-            const playTypeDuration = 1500; // Show play type for 1.5 seconds
 
             const step = async (timestamp) => {
                 if (!animationStartTime) {
@@ -3654,17 +3992,13 @@ window.gameVisualizer = {
                     requestAnimationFrame(step);
                 } else {
                     this.ballPosition.x = targetX; 
-                    console.error(`[ animatePlay END ] Set this.ballPosition.x to targetX. ball.x: ${this.ballPosition.x}, targetX: ${targetX}`);
                     this.drawField(); // Final draw after animation, ensures play type text is cleared
                     this.drawPlayerIconWithBall();
-                    console.log("Visualizer: Animation complete. Player at", this.ballPosition.x);
 
                     if (displayPlayType.includes("Field Goal Attempt")) { // Check based on displayPlayType
-                        await this.animateFieldGoalKick(initialPossessingTeam, playData.result === "FG_GOOD"); // Pass captured
-                    } else if (playData.result === 'TD') {
-                        // Use initialPossessingTeam for the DEBUG log and for the call to animateScore
-                        console.log("DEBUG: About to call animateScore for TD. playData.result:", playData.result, "Possessing team (captured at start of animatePlay):", initialPossessingTeam);
-                        await this.animateScore(initialPossessingTeam, 'TD'); // Pass captured
+                        await this.animateFieldGoalKick(actingTeam, playData.result === "FG_GOOD");
+                    } else if (playData.result && playData.result.startsWith('TD_')) {
+                        await this.animateScore(actingTeam, 'TD');
                     } else if (playData.result === 'Turnover' || displayPlayType.includes("Fumble!") || displayPlayType.includes("Interception!")) {
                         this.showTurnover(displayPlayType); // Pass specific turnover type
                     }
@@ -3676,17 +4010,17 @@ window.gameVisualizer = {
         });
     },
 
-    animateFieldGoalKick: async function(team, isGood) {
+    animateFieldGoalKick: async function(actingTeam, isGood) {
         return new Promise(async (resolve) => {
             if (!this.ctx || !this.canvas) {
                 console.warn("Visualizer context or canvas not available for animateFieldGoalKick.");
                 resolve(); // Resolve immediately if visualizer isn't ready
                 return;
             }
-            console.log(`Visualizer: Animating Field Goal Kick. Good: ${isGood}`);
+            // Removed console.log for animating Field Goal Kick
 
             const uprights = {
-                x: team === 'Eagles' ? this.canvas.width - this.fieldPadding - this.endZoneHeight * 0.2 : this.fieldPadding + this.endZoneHeight * 0.2, // Approx goal line
+                x: actingTeam === 'Eagles' ? this.canvas.width - this.fieldPadding - this.endZoneHeight * 0.2 : this.fieldPadding + this.endZoneHeight * 0.2, // Approx goal line
                 y: this.canvas.height / 2,
                 width: 10, // Width of the posts
                 crossbarHeight: this.canvas.height * 0.3,
@@ -3743,7 +4077,7 @@ window.gameVisualizer = {
                 if (progress < 1) {
                     requestAnimationFrame(animateKick);
                 } else {
-                    await this.animateScore(team, isGood ? 'FG_GOOD' : 'FG_NO_GOOD');
+                    await this.animateScore(actingTeam, isGood ? 'FG_GOOD' : 'FG_NO_GOOD');
                     // Reset ball position to midfield after the kick animation sequence is done by animateScore
                     setTimeout(() => {
                         this.ballPosition.x = this.canvas.width / 2;
@@ -3756,25 +4090,31 @@ window.gameVisualizer = {
         });
     },
 
-    animateScore: function(team, type) { // type: 'TD', 'FG_GOOD', 'FG_NO_GOOD'
+    animateScore: function(actingTeam, type) { // type: 'TD', 'FG_GOOD', 'FG_NO_GOOD', actingTeam: 'Eagles' or 'Opponent'
         return new Promise((resolve) => {
             if (!this.ctx || !this.canvas) {
                 console.warn("Visualizer context or canvas not available for animateScore.");
                 resolve(); // Resolve immediately if visualizer isn't ready
                 return;
             }
-            console.log(`Visualizer: Animating ${type} for ${team}`);
-            // <<< ADD DIAGNOSTIC LOG HERE >>>
+            // Removed console.log for animating score type
             if (type === 'TD') {
                 const endZoneWidth = this.yardLineSpacing * 1.5;
                 const opponentEndZoneBoundary = this.fieldPadding + endZoneWidth; // Right edge of opponent's endzone (lower X values)
                 const eaglesEndZoneBoundary = this.canvas.width - this.fieldPadding - endZoneWidth; // Left edge of Eagles' endzone (higher X values)
-                console.log(`TD Animation: Ball at X: ${this.ballPosition.x}. Opponent Endzone (Goal line at X=${this.fieldPadding + endZoneWidth}), Eagles Endzone (Goal line at X=${this.canvas.width - this.fieldPadding - endZoneWidth})`);
+                // Removed console.log for TD animation ball position
             }
             let message = "EVENT!";
-            if (type === 'TD') message = "TOUCHDOWN!";
-            else if (type === 'FG_GOOD') message = "FIELD GOAL IS GOOD!";
-            else if (type === 'FG_NO_GOOD') message = "FIELD GOAL IS NO GOOD!"; // Corrected message
+            if (type === 'TD') {
+                message = "TOUCHDOWN!";
+                playAudio('sfx_touchdown');
+            } else if (type === 'FG_GOOD') {
+                message = "FIELD GOAL IS GOOD!";
+                playAudio('sfx_field_goal_good');
+            } else if (type === 'FG_NO_GOOD') {
+                message = "FIELD GOAL IS NO GOOD!";
+                playAudio('sfx_field_goal_no_good');
+            }
             
             let animationTime = 0;
             const textDuration = 1500; 
@@ -3784,12 +4124,12 @@ window.gameVisualizer = {
 
             const pulseSpeed = 500; 
             const baseFontSize = type === 'TD' ? 48 : (type.includes('FG') ? 40 : 36);
-        const maxFontIncrease = type === 'TD' ? 12 : (type.includes('FG') ? 10 : 8);
+            const maxFontIncrease = type === 'TD' ? 12 : (type.includes('FG') ? 10 : 8);
 
-        const scoringTeamLogo = (team === 'Eagles' && this.eaglesLogoLoaded) ? this.eaglesLogoImg : (this.opponentLogoLoaded ? this.opponentLogoImg : null);
-        const logoInitialAlpha = 0;
-        const logoMaxAlpha = 0.8;
-        const logoFadeSpeed = logoFlashDuration / 2;
+            const scoringTeamLogo = (actingTeam === 'Eagles' && this.eaglesLogoLoaded) ? this.eaglesLogoImg : (this.opponentLogoLoaded ? this.opponentLogoImg : null);
+            const logoInitialAlpha = 0;
+            const logoMaxAlpha = 0.8;
+            const logoFadeSpeed = logoFlashDuration / 2;
 
 
         const animate = (timestamp) => {
@@ -3817,7 +4157,7 @@ window.gameVisualizer = {
                 this.ctx.font = `bold ${currentFontSize}px Impact, Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
-                this.ctx.fillStyle = team === 'Eagles' ? this.homeTeamColor : this.awayTeamColor;
+                this.ctx.fillStyle = actingTeam === 'Eagles' ? this.homeTeamColor : this.awayTeamColor;
                 this.ctx.shadowColor = this.lineColor;
                 this.ctx.shadowBlur = 15;
                 this.ctx.strokeStyle = 'black';
@@ -3849,8 +4189,8 @@ window.gameVisualizer = {
 
             // Phase 3: Confetti (for TD only)
             if (type === 'TD' && elapsed >= textDuration + logoFlashDuration && elapsed < totalDuration) {
-                if (this.particles.length === 0 && elapsed < textDuration + logoFlashDuration + 100) { 
-                    this.initConfetti(team === 'Eagles' ? this.homeTeamColor : this.awayTeamColor, team === 'Eagles' ? '#A5ACAF' : '#FFFFFF'); 
+                if (this.particles.length === 0 && elapsed < textDuration + logoFlashDuration + 100) {
+                    this.initConfetti(actingTeam === 'Eagles' ? this.homeTeamColor : this.awayTeamColor, actingTeam === 'Eagles' ? '#A5ACAF' : '#FFFFFF');
                 }
                 this.drawConfetti();
                 this.updateConfetti();
@@ -3919,8 +4259,15 @@ window.gameVisualizer = {
 
     showTurnover: function(turnoverType = "TURNOVER!") { // Accept specific type
         if (!this.ctx || !this.canvas) return;
-        console.log("Visualizer: Showing Turnover - " + turnoverType);
         const message = turnoverType.toUpperCase(); // Use the passed turnoverType
+
+        if (message.includes("INTERCEPTION")) {
+            playAudio('sfx_turnover_interception');
+        } else if (message.includes("FUMBLE")) {
+            playAudio('sfx_turnover_fumble');
+        } else {
+            // Fallback for generic turnover if needed, or no sound
+        }
 
         let animationTime = 0;
         const duration = 2000; 
