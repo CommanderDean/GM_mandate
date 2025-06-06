@@ -60,7 +60,7 @@ const PLAY_ADVANTAGE_OUTCOMES = {
     "-1--3": { category: "Loss / Disruption", baseYardage: -4, event: "LOSS_OF_YARDS", notes: "Offensive struggle." },
     "-4--7": { category: "Significant Stop", baseYardage: -8, event: "SACK_POSSIBLE", notes: "Defence dominates the play." },
     "-8--11": { category: "Major Defensive Win", baseYardage: -12, event: "TURNOVER_RISK_INCREASED", notes: "Turns momentum." },
-    "-12-": { category: "Disaster for Offence", baseYardage: -18, event: "TURNOVER_RISK_VERY_HIGH", notes: "Catastrophic play for the offence." }
+    "-12-": { category: "Disaster for Offence", baseYardage: -18, event: "TURNOVER_RISK_VERY_HIGH", notes: "Catastrophic play." }
 };
 
 let allNFLPlayers = []; // Global variable to store loaded player data
@@ -890,7 +890,7 @@ function renderNarrativeIntroScreen() {
 }
 
 function renderGMOfficeScreen() {
-    const canScout = gameState.currentWeek === 0;
+    const canScout = true;
     const canRecruit = true; // Always allow access to recruitment, cost check is done there
     const canStartSeason = gameState.eaglesRoster.length >= MINIMUM_ROSTER_SIZE;
     let rosterMessage = "";
