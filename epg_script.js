@@ -881,6 +881,7 @@ function renderNarrativeIntroScreen() {
     screenArea.innerHTML = `
         <div class="narrative-intro-content">
             <h2>FOR IMMEDIATE RELEASE: Philadelphia Eagles Announce Visionary New General Manager</h2>
+            <img id="intro-stadium-photo" src="images/jake_stadium.png" alt="Jake Stadium" style="display: block; margin: 20px auto; max-width: 100%; height: auto;">
             <p>Philadelphia, PA – The Philadelphia Eagles today announced the appointment of Jake Harris as their new General Manager. Harris, noted for his sharp strategic acumen as a former professional cricketer and his innovative systems-thinking honed as a video game executive, steps in to lead the Eagles into a new era...</p>
             <p>Owner Jeffrey Lurie stated, 'Jake's unique background offers a fresh perspective crucial for navigating the modern NFL – balancing on-field excellence with the league's evolving focus on player ideologies and environmental stewardship. We have tasked GM Harris with building a winning team that also champions progress and responsibility. The goal this season: achieve a winning record (at least ${gameState.seasonGoal.wins} wins), significantly improve our team's Green Rating to ${gameState.seasonGoal.greenRatingMin}% or higher, and show the league the Eagles are leaders, on and off the field.'</p>
             <p>Welcome to the Eagles, GM Harris. Your office awaits.</p>
