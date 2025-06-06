@@ -844,7 +844,7 @@ function renderCurrentScreen() {
 function renderMainMenuScreen() {
     screenArea.innerHTML = `
         <div class="main-menu-container">
-            <h1>Kudos & Consequences</h1>
+            <h1>Main Menu</h1>
             <p class="creator-credit-mainmenu">Happy Birthday Jake</p>
             <div class="main-menu-options">
                 <button id="new-game-button">New Game</button>
