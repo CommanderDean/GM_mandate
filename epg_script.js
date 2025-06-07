@@ -3462,7 +3462,7 @@ function showNotification(message, isError = false, duration = 3000, position = 
  * The budget is a base amount modified by a percentage based on Intel.
  */
 function updateBudgetBasedOnIntel() {
-    const baseBudget = 150000000; // Define the base budget
+    const baseBudget = 30000000; // Define the base budget
     // Calculate modifier: 0% at 150 Intel, -50% at 0 Intel, +50% at 300+ Intel
     const intelModifierPercentage = Math.max(-0.5, Math.min(0.5, (gameState.scoutingIntel - 150) / 150 * 0.5));
     gameState.teamBudget = Math.max(0, Math.floor(baseBudget * (1 + intelModifierPercentage))); // Ensure budget doesn't go below 0
